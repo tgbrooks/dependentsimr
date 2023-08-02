@@ -1,58 +1,3 @@
-## NOTES
-# - https://www.cse.unr.edu/~fredh/papers/conf/196-agpuantaafhdms/paper.pdf
-#   GPU accelerated version of NORTA
-# - https://citeseerx.ist.psu.edu/doc/10.1.1.48.281
-#   Original(?) NORTA paper
-# - DOI: 10.1002/asmb.901
-#   For poisson variables specifically, gives efficient approximation to find the right input correlation matrix
-
-X <- rbind( c(5, 4, 3), c(6, 10, 12), c(0, 0, 1), c(5, 4, 3.2), c(10, 8.2, 6.1))
-
-
-covariance_for_simulation <- function(data, k) {
-  # Finds a covariance matrix from the data that is appropriate for simulation
-  # by assuming that all the independence lies in the top k principal components
-  # but still makes the variance of each individual variable equal to the observed variance
-  # The output is a covariance matrix, suitable for use with mvrnorm as the Sigma parameter
-  
-  # Compute the (sample) variances of each measurement in the data
-  variances <- apply(data, c(1), var)
-  
-  # Perform principal component analysis
-  pc <- prcomp(t(data), rank. = k)
-  sim_cov <- pc$rotation %*% diag(head(pc$sdev, k), nrow=k)^2 %*%t(pc$rotation)
-  diag(sim_cov) <- variances
-  return(sim_cov)
-}
-
-
-sample_from_covariance_like <- function(data, k, n_samples) {
-  # Samples from a multivariate normal distribution that has:
-  # - each variable has the same variance as in the observed data
-  # - the same variance in the top k principal components observed in data
-  # The mean is assumed to be zero
-  
-  # Compute the (sample) variances of each measurement in the data
-  variances <- apply(data, c(1), var)
-  
-  # Perform principal component analysis
-  pc <- prcomp(t(data), rank. = k)
-  
-  # Draw from the multivariate normal distribution with the dependence structure of the pc
-  # but done efficiently by transforming a standard normal
-  indep_draws <- matrix(rnorm(k*n_samples), c(k, n_samples))
-  sdev <- diag(head(pc$sdev, k), nrow=k)
-  pc_draws <- pc$rotation %*% sdev %*% indep_draws
-  
-  # Add in the missing variance to match the actual data
-  # by drawing independent data with the appropriate variance
-  missing_var <- variances - (pc$rotation %*% sdev)^2
-  n_features = dim(data)[1]
-  indep_draws <- matrix(rnorm(n_features*n_samples, sd=rep(sqrt(missing_var), n_samples)), c(n_features, n_samples))
-
-  return(pc_draws + indep_draws)
-}
-
 get_random_structure <- function(data, rank, type="normal") {
   # Compute the marginal and covariance structure from given data
   # Computes only the top 'rank' part of the covariance structure
@@ -94,7 +39,7 @@ get_random_structure <- function(data, rank, type="normal") {
   ))
 }
 
-draw_from_multivariate_corr <- function(random_structure, n_samples) {
+  draw_from_multivariate_corr <- function(random_structure, n_samples) {
   # Samples from a multivariate distribution that has:
   # - each variable has the specified marginal distribution
   # - the same covariance in the top k principal components observed in data

@@ -26,14 +26,17 @@ get_random_structure <- function(data, rank, type="normal") {
   }
   
   # Cov structure from PCA of the (transformed to have normal marginals) data
-  pc <- prcomp(t(transformed_data), rank. = rank)
+  pc <- prcomp(t(transformed_data), rank. = rank, center = FALSE, scale. = FALSE)
+  # We compute variances without centering the data - since the transformation to normal
+  # already 'centers' it (same as center=FALSE in prcomp, otherwise we get negatives in the draw function)
+  variances <- apply(transformed_data^2, 1, sum)
   
   return(list(
     type = type,
     k = k,
     marginals = marginals,
     cov = pc,
-    var = apply(transformed_data, 1, var),
+    var = variances,
     n_features = dim(transformed_data)[1],
     transformed_data = transformed_data
   ))
@@ -42,7 +45,7 @@ get_random_structure <- function(data, rank, type="normal") {
   draw_from_multivariate_corr <- function(random_structure, n_samples) {
   # Samples from a multivariate distribution that has:
   # - each variable has the specified marginal distribution
-  # - the same covariance in the top k principal components observed in data
+  # - the same covariance in the top k principal components observed in (normalzied) data
   
   k <- random_structure$k
   marginals <- random_structure$marginals

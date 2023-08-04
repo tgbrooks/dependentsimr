@@ -45,7 +45,7 @@ get_random_structure <- function(data, rank, type="normal") {
   draw_from_multivariate_corr <- function(random_structure, n_samples) {
   # Samples from a multivariate distribution that has:
   # - each variable has the specified marginal distribution
-  # - the same covariance in the top k principal components observed in (normalzied) data
+  # - the same covariance in the top k principal components observed in (normalized) data
   
   k <- random_structure$k
   marginals <- random_structure$marginals

@@ -47,10 +47,10 @@ get_random_structure_DEseq2 <- function(data, rank) {
 
   return(list(
     type = "DESeq2",
-    k = k,
+    rank = rank,
     marginals = list(
       sizeFactor = dds$sizeFactor,
-      mean = assays(dds)$mu,
+      q = assays(dds)$mu[,1] / dds$sizeFactor[1],
       dispersion = dispersions(dds)
     ),
     cov = pc,
@@ -66,7 +66,7 @@ draw_from_multivariate_corr_DESeq2 <- function(random_structure, n_samples, size
   # - the same covariance in the top k principal components observed in (normalized) data
   # - The size factors provided (constant 1s for all samples if omitted, giving identical library sizes for each)
   
-  k <- random_structure$k
+  k <- random_structure$rank
   marginals <- random_structure$marginals
   type <- random_structure$type
   n_features <- random_structure$n_features
@@ -92,10 +92,11 @@ draw_from_multivariate_corr_DESeq2 <- function(random_structure, n_samples, size
   transformed_draws <- pc_draws + indep_draws
   
   # Correct the draws to have the correct marginals
-  #TODO use the size_factors!
+  s <- matrix(size_factors, nrow=n_features, ncol=n_samples, byrow=TRUE)
+  mu <- s * marginals$q
   draws <- qnbinom(
-    pnorm(transformed_data),
-    mu = marginals$mean,
+    pnorm(transformed_draws),
+    mu = mu,
     size = 1/marginals$dispersion,
   )
   draws[is.na(draws)] <- 0 # NAs comes from the all-zero rows in the original data

@@ -1,20 +1,28 @@
 ## MULTIVARIATE NORMAL DATA ----------------------------------
 # Generate the example MV normal data
 library(MASS)
-norm_data <- t(mvrnorm(n=20, mu=c(0,0, 0), Sigma=matrix(c(1, 0.8, 0, 0.8, 1, 0, 0, 0, 1), c(3,3))))
+Sigma = matrix(c(
+  1,      0.8,    0,  0,  0,  0,
+  0.8,    1,      0,  0,  0,  0,
+  0,      0,      1,  0,  0,  0,
+  0,      0,      0,  1,  0,  0,
+  0,      0,      0,  0,  1,  0.3,
+  0,      0,      0,  0,  0.3, 1
+), nrow=6, ncol=6)
+norm_data <- t(mvrnorm(n=20, mu=c(0,0,0,0,0,0), Sigma=Sigma))
 
 # Simulate draws mimicking that data
-rs_normal <- get_random_structure(pois_data, rank=1, type="normal")
-draws_normal <- draw_from_multivariate_corr(rs_normal, 30)
+rs_normal <- get_random_structure(norm_data, rank=2, type="normal")
+draws_normal <- draw_from_multivariate_corr(rs_normal, n_samples=30)
 
 
 ## POISSON DATA -------------------------------------------
 # Generate dependent Poisson data from the MV normal data 
-pois_data <- qpois(pnorm(norm_data), lambda = c(50, 1000, 2))
+pois_data <- qpois(pnorm(norm_data), lambda = c(50, 1000, 2, 10, 0.2, 0.5))
 
 # Simulate draws mimicking that data
 rs_poisson <- get_random_structure(pois_data, rank=1, type="poisson")
-draws_poisson <- draw_from_multivariate_corr(rs_poisson, 30)
+draws_poisson <- draw_from_multivariate_corr(rs_poisson, n_samples=30)
 
 ## DESEQ2 DATA -------------------------------------------------
 # A small amount of RNA-seq read count data
@@ -45,5 +53,4 @@ read_counts <- matrix(d, nrow=20, ncol=9, byrow=TRUE)
 
 # Simulate draws mimicking that data
 rs_deseq <- get_random_structure(read_counts, rank=2, type="DESeq2")
-draws_deseq <- draw_from_multivariate_corr(rs_deseq, 10)
-rs_deseq2 <- get_random_structure_DEseq2(read_counts, rank=1)
+draws_deseq <- draw_from_multivariate_corr(rs_deseq, n_samples=30)

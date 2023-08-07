@@ -1,5 +1,3 @@
-library(DESeq2)
-
 get_random_structure_DEseq2 <- function(data, rank) {
   # Use DESeq2 to compute the marginal distributions of the data
   # Assuming all come from the same group (i.e., no predictor variables
@@ -14,17 +12,17 @@ get_random_structure_DEseq2 <- function(data, rank) {
   rownames(dummy) <- colnames(data)
   colnames(dummy) <- "dummy"
   
-  dds <- DESeqDataSetFromMatrix(
+  dds <- DESeq2::DESeqDataSetFromMatrix(
     as.matrix(data),
     dummy,
     ~ 1
   )
-  dds <- DESeq(dds)
+  dds <- DESeq2::DESeq(dds)
 
   # Use the DESeq-fit model to transform the data to approximate normal
   # DESeq has the following model:
-  # Each X_{ij} ~ NB(mu_ij, alpha_i)
-  #      mu_ij = s_j q_{ij}
+    # Each X_{ij} ~ NB(mu_ij, alpha_i)
+    #      mu_ij = s_j q_{ij}
   #      log_2(q_{ij}) = x_j Beta_i
   # We use the trivial linear model so x_j = 1 and Beta_i is just an Intercept term
   # s_j is the sample-specific size factor to account for differences in read depths

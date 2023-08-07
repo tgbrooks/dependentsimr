@@ -96,6 +96,14 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
   }
 }
 
+remove_dependence <- function(random_structure) {
+  # Returns another random structure that has 0 dependence
+  # for comparison with the dependent version
+  new_structure = random_structure
+  new_structure$cov$d = rep(0, random_structure$rank)
+  return(new_structure)
+}
+
 fit_deseq <- function(data) {
   # Use DESeq2 to fit the marginal distributions (negative binomial)
   dummy <- as.matrix(rep(1, dim(data)[2]))

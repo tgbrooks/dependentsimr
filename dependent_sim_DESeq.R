@@ -8,7 +8,7 @@ get_random_structure_DEseq2 <- function(data, rank) {
   # random data draws with draw_from_multivariate_corr_DESeq2
   # data is expected to be a matrix of unnormalized counts appropriate
   # for input to DESeq2.
-  
+
   # Use DESeq2 to fit the marginal distributions (negative binomial)
   dummy <- as.matrix(rep(1, dim(data)[2]))
   rownames(dummy) <- colnames(data)
@@ -20,7 +20,7 @@ get_random_structure_DEseq2 <- function(data, rank) {
     ~ 1
   )
   dds <- DESeq(dds)
-  
+
   # Use the DESeq-fit model to transform the data to approximate normal
   # DESeq has the following model:
   # Each X_{ij} ~ NB(mu_ij, alpha_i)
@@ -30,30 +30,35 @@ get_random_structure_DEseq2 <- function(data, rank) {
   # s_j is the sample-specific size factor to account for differences in read depths
   # alpha_i is the gene's dispersion parameter
   # perform the transformation via negative binomial -> probability -> normal distribution
+  q <- 2^mcols(dds)$Intercept
+  s <- dds$sizeFactor
+  mu <- matrix(s, nrow=nrow(data), ncol=ncol(data), byrow=TRUE) * matrix(q, nrow=nrow(data), ncol=ncol(data))
+
   transformed_data <- qnorm(pnbinom(
-    data,
-    mu = assays(dds)$mu,
+    assays(dds)$replaceCounts, # We use the outlier-removed data that DESeq2 has created for us
+    mu = mu,
     size = 1/dispersions(dds),
   ))
-  
+
   # DESeq gives NAs where it can't fit. We replace those with zeros
   transformed_data[is.na(transformed_data)] <- 0
 
   # Cov structure from PCA of the (transformed to have normal marginals) data
-  pc <- prcomp(t(transformed_data), rank. = rank, center = FALSE, scale. = FALSE)
+  udv <- svd(transformed_data, nu=rank, nv=0)
+  udv$d <- udv$d / sqrt(dim(data)[2])
+
   # We compute variances without centering the data - since the transformation to normal
-  # already 'centers' it (same as center=FALSE in prcomp, otherwise we get negatives in the draw function)
-  variances <- apply(transformed_data^2, 1, sum)
+  # already 'centers' it (same reason we don't center/scale before SVD)
+  variances <- apply(transformed_data^2, 1, mean)
 
   return(list(
     type = "DESeq2",
     rank = rank,
     marginals = list(
-      sizeFactor = dds$sizeFactor,
-      q = assays(dds)$mu[,1] / dds$sizeFactor[1],
+      q = q,
       dispersion = dispersions(dds)
     ),
-    cov = pc,
+    cov = udv,
     var = variances,
     n_features = dim(transformed_data)[1],
     transformed_data = transformed_data
@@ -72,25 +77,25 @@ draw_from_multivariate_corr_DESeq2 <- function(random_structure, n_samples, size
   n_features <- random_structure$n_features
   pc <- random_structure$cov
   if (is.null(size_factors)) { size_factors <- rep(1, n_samples) }
-  
+
   if (length(size_factors) != n_samples) { stop("size_factors must be of length n_samples")}
   if (random_structure$type != 'DESeq2') { stop("random structure was not generated via DESeq2")}
-  
+
   # Draw from the multivariate normal distribution with the dependence structure of the pc
   # but done efficiently by transforming to a standard normal
   indep_draws <- matrix(rnorm(k*n_samples), c(k, n_samples))
-  sdev <- diag(head(random_structure$cov$sdev, k), nrow=k)
-  pc_draws <- pc$rotation %*% sdev %*% indep_draws
-  
+  sdev <- diag(head(random_structure$cov$d, k), nrow=k)
+  pc_draws <- pc$u %*% sdev %*% indep_draws
+
   # Add in the missing variance to match the actual data
   # by drawing independent data with the appropriate variance
-  missing_var <- pmax(random_structure$var - (pc$rotation %*% sdev)^2, 0)
+  missing_var <- pmax(random_structure$var - (pc$u %*% pc$d)^2, 0)
   #print(missing_var)
   indep_draws <- matrix(rnorm(n_features*n_samples, sd=rep(sqrt(missing_var), n_samples)), c(n_features, n_samples))
-  
+
   # Random draws with normal marginals
   transformed_draws <- pc_draws + indep_draws
-  
+
   # Correct the draws to have the correct marginals
   s <- matrix(size_factors, nrow=n_features, ncol=n_samples, byrow=TRUE)
   mu <- s * marginals$q

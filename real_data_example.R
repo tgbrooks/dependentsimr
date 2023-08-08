@@ -8,13 +8,14 @@ read_data <- as.matrix(liver[ ,3:14])
 mode(read_data) <- "integer"
 rownames(read_data) <- liver[ ,1]
 
-# Run dependent_sim on this data
+# Run dependent_sim on this data --------------------
 rs <- get_random_structure(read_data, rank=2, type="DESeq2")
 draws <- draw_from_multivariate_corr(rs, n_samples=100)
 
 rs_indep <- remove_dependence(rs)
 indep_draws <- draw_from_multivariate_corr(rs_indep, n_samples=100)
 
+# Scale to Counts Per Million ------------------------
 cpm <- function(x) { # counts per million
   return(t(t(x) / apply(x, 2, sum) * 1e6))
 }
@@ -30,7 +31,7 @@ real_variance <- apply(scaled_read_data, 1, var)
 plot(log(real_mean+1), log(simulated_mean+1))
 plot(log(real_variance+1), log(simulated_variance+1))
 
-# Plot correlation -------------------------------------
+# Plot gene-gene correlation ---------------------------
 N_rows <- 1000
 high_expr_rows <- which(apply(read_data, 1, mean) > 100)
 sample_rows <- sample(high_expr_rows, N_rows)
@@ -52,8 +53,6 @@ ggplot(data = data.frame(
 
 # Plot the top principal components --------------------
 constant_rows <- apply(read_data, 1, function(x) all(x - mean(x) == 0))
-# using PCA
-# scaling each column to account for read depth differences
 pca <- prcomp(t(scale(read_data[!constant_rows,])), rank.=2, scale.=TRUE)
 projected_read_data <- predict(pca, t(scale(read_data[!constant_rows, ])))
 projected_draws <- predict(pca, t(scale(draws[!constant_rows, ])))

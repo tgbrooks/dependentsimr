@@ -30,11 +30,11 @@ get_random_structure <- function(data, rank, type="normal") {
 
   # Cov structure from PCA of the (transformed to have normal marginals) data
   udv <- svd(transformed_data, nu=rank, nv=0)
-  udv$d <- udv$d / sqrt(dim(data)[2])
+  udv$d <- udv$d / sqrt(dim(data)[2]-1)
 
   # We compute variances without centering the data - since the transformation to normal
   # already 'centers' it (same reason we don't center/scale before SVD)
-  variances <- apply(transformed_data^2, 1, mean)
+  variances <- apply(transformed_data^2, 1, sum) / (dim(data)[2]-1)
 
   return(list(
     type = type,

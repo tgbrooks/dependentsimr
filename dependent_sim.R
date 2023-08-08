@@ -136,11 +136,14 @@ fit_deseq <- function(data) {
     # DESeq2 has removed outliers, so we use that data
     counts <- assays(dds)$replaceCounts
   }
-  transformed_data <- qnorm(pnbinom(
-    counts,
-    mu = mu,
-    size = 1/dispersions(dds),
-  ))
+
+  # this is a discrete distribution
+  # So we 'smear' the probability of each bin out when converting to normal
+  lower <- pnbinom(counts-1, mu = mu, size = 1/dispersions(dds))
+  upper <- pnbinom(counts, mu = mu, size = 1/dispersions(dds))
+  p <- matrix(runif(length(counts), lower, upper), nrow=nrow(counts), ncol=ncol(counts))
+
+  transformed_data <- qnorm(p)
 
   # DESeq gives NAs where it can't fit. We replace those with zeros
   transformed_data[is.na(transformed_data)] <- 0

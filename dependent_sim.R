@@ -43,7 +43,8 @@ get_random_structure <- function(data, rank, type="normal") {
     cov = udv,
     var = variances,
     n_features = dim(transformed_data)[1],
-    transformed_data = transformed_data
+    transformed_data = transformed_data,
+    rownames = rownames(data)
   ))
 }
 
@@ -77,9 +78,9 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
 
   # Adjust the draws to have the correct marginals
   if (type == "normal") {
-    return(transformed_draws * sqrt(marginals$var) + marginals$mean)
+    draws <- transformed_draws * sqrt(marginals$var) + marginals$mean
   } else if (type == "poisson") {
-    return(qpois(pnorm(transformed_draws), lambda = marginals$lambda))
+    draws <- qpois(pnorm(transformed_draws), lambda = marginals$lambda)
   } else if (type == "DESeq2") {
     if (is.null(size_factors)) { size_factors <- rep(1, n_samples) }
     s <- matrix(size_factors, nrow=n_features, ncol=n_samples, byrow=TRUE)
@@ -90,10 +91,12 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
       size = 1/marginals$dispersion,
     )
     draws[is.na(draws)] <- 0 # NAs comes from the all-zero rows in the original data
-    return(draws)
   } else {
     stop("'marginals$type' must be one of: 'normal', 'poisson', 'DESeq2'")
   }
+
+  rownames(draws) <- random_structure$rownames
+  return(draws)
 }
 
 remove_dependence <- function(random_structure) {

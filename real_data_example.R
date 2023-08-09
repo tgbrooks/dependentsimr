@@ -3,7 +3,7 @@ library(ggplot2)
 
 # Load the real data ---------------------------------
 liver <- read.delim("C:/Users/tgb/data/circadian_controls/results/Liver/num_reads_all_samples.txt")
-# we choose just 8 samples to use from this large dataset
+# we choose just 12 samples to use from this large dataset
 read_data <- as.matrix(liver[ ,3:14])
 mode(read_data) <- "integer"
 rownames(read_data) <- liver[ ,1]
@@ -28,8 +28,12 @@ simulated_mean <- apply(scaled_draws, 1, mean)
 simulated_variance <- apply(scaled_draws, 1, var)
 real_mean <- apply(scaled_read_data, 1, mean)
 real_variance <- apply(scaled_read_data, 1, var)
-plot(log(real_mean+1), log(simulated_mean+1))
-plot(log(real_variance+1), log(simulated_variance+1))
+ggplot() +
+  geom_point(aes(x=log(real_mean+1),y=log(simulated_mean+1))) +
+  geom_abline(slope=1, intercept=0)
+ggplot() +
+  geom_point(aes(x=log(real_variance+1),y=log(simulated_variance+1))) +
+  geom_abline(slope=1, intercept=0)
 
 # Plot gene-gene correlation ---------------------------
 N_rows <- 1000

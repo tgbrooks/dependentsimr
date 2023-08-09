@@ -19,7 +19,7 @@ simulated_data <- draw_from_multivariate_corr(random_structure, n_samples = 20)
 ```
 
 ## Covariance matrices
-Suppose that we have a dataset with $n$ samples and $p$ measurements and the data stored in the $p x n$ matrix $X$.
+Suppose that we have a dataset with $n$ samples and $p$ measurements and the data stored in the $p \times n$ matrix $X$.
 In omics, we assume that $n < p$.
 The $p \times p$ correlation (or covariance) matrix $\Sigma$ computed from the experimental dataset will have rank at most $n-1$.
 If the measured $\Sigma$ is then used to generate data from a multivariate normal distribution, all the data will lie on an $n-1$-dimensional plane in the $p$-dimensional space of possible measurements.
@@ -68,9 +68,9 @@ We will generate an output $p$-vector $X'$ of a single sample whose distribution
 7. Set $Z' = UDw/\sqrt{n-1} + V$.
 8. Output $X'_i = F_i^{-1}(\Phi(Z'))$.
 
-Each $Z'_{i}$ is normally distributed with the same standard deviation as $Z_{i \cdot}$, which was constructed to approximately be from the standard normal distribution.
-Therefore, the output $X'_i$ has approximately the fit distribution with CDF $F_i$.
-Moreover, using the transformation from step 2, the $\Phi^{-1} \circ F_i$ to each component of $X'$ gives $Z'$ which has a multivariate normal distribution with covariance matrix $U D^2 U^T/ + diag(\sqrt(M))$.
+Each $Z_i'$ is normally distributed with the same standard deviation as $Z_{i \cdot}$, which was constructed to approximately be from the standard normal distribution.
+Therefore, the output $X_i'$ has approximately the fit distribution with CDF $F_i$.
+Moreover, using the transformation from step 2, the $\Phi^{-1} \circ F_i$ to each component of $X'$ gives $Z'$ which has a multivariate normal distribution with covariance matrix $U D^2 U^T/(n-1) + diag(\sqrt{M})$.
 This agrees with the rank $k$ approximation of the empirical covariance matrix of $Z_{ij}$ as desired.
 Note that we use $n-1$ rather than $n$ to obtain an unbiased estimate of variance.
 

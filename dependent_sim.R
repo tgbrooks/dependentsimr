@@ -1,3 +1,5 @@
+library(DESeq2)
+
 get_random_structure <- function(data, rank, type="normal") {
   # Compute the marginal and covariance structure from given data
   # Computes only the top 'rank' part of the covariance structure

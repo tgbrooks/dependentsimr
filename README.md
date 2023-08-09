@@ -94,11 +94,14 @@ Instead, those clusters should each be simulated separately.
 
 The R package [SPsimSeq](https://github.com/CenterForStatistics-UGent/SPsimSeq) provides a dedicated RNA-seq and scRNA-seq simulator using a NORTA approach to simulate gene dependence.
 In contrast to this package, it uses WGCNA to determine the correlation matrix, which is a gene network approach.
-However, this method takes significant time to run.
+However, this method takes significant computational resources.
 Indeed, the `SPsimSeq` paper generated data for just 5000 genes based on a randomly sampled 5000 gene subset of the RNA-seq data and trying to generate a full sample exhausted the memory of a 24GB computer.
-In contrast, our method runs in seconds on to generate full 40,000 gene (Mus musculus) samples on the same computer.
+In contrast, our method runs in seconds to generate full 40,000 gene (Mus musculus) samples on the same computer.
 `SPsimSeq` is more specialized and full-featured for RNA-seq simulation, providing, for example, native differential expression (DE) options.
 Using our package requires manually setting marginal expression values to simulate DE, but also supports other marginal distributions for situations outside of RNA-seq.
+
+The [scDesign2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02367-2) simulator for scRNA-seq uses NORTA and, like our method, uses the approach of estimating the correlation matrix from the normalized dataset.
+However, it limits this correlation matrix to top-expressed genes.
 
 Other NORTA-based R packages that may be applicable, at least for datasets with smaller numbers of features, include `bindata`, `GenOrd`, and `SimMultiCorrData`, the last of these being the most comprehensive.
 The `bigsimr` package provides faster implementations of these methods to scale up to omics-level data.
@@ -106,6 +109,6 @@ Though even this is computationally demanding; their paper references generating
 The `copula` package provides even more flexible dependence options through use of copulas (the NORTA approach is equivalent to using Gaussian copulas).
 All of these packages provide more flexibility in specifying dependence than our package, which can only mimic an existing dataset, and therefore the longer run-times may be unavoidable for use cases where researchers need to parameterize the dependence structure.
 
-The `corpcor` package provides a James-Stein style shrinkage estimator for the correlation matrix for sample-limited cases like omics.
-For inference, this is superior to our simple rank $k$ approximation, however for simulation, shrinkage of variance is not desirable as generated data does not reflect a realistic level of variation.
+The `corpcor` package provides a James-Stein style shrinkage estimator of the covariance matrix for sample-limited cases like omics.
+For inference, this is superior to our simple rank $k$ approximation, however for simulation, shrinkage of variance is not desirable as the generated data does not reflect a realistic level of variation.
 Moreover, `corpcor` yields full-rank correlation matrices that are not efficient to sample from.

@@ -54,3 +54,9 @@ read_counts <- matrix(d, nrow=20, ncol=9, byrow=TRUE)
 # Simulate draws mimicking that data
 rs_deseq <- get_random_structure(read_counts, rank=2, type="DESeq2")
 draws_deseq <- draw_from_multivariate_corr(rs_deseq, n_samples=30)
+
+
+## Empricial fit --------------------------------------------------------
+# Using the same as the DESeq2 data
+rs_emp <- get_random_structure(read_counts, rank=2, type="empirical")
+draws_emp <- draw_from_multivariate_corr(rs_emp, n_samples=30)

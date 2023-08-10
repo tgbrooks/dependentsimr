@@ -26,8 +26,15 @@ get_random_structure <- function(data, rank, type="normal") {
     fit <- fit_deseq(data)
     marginals <- fit$marginals
     transformed_data <- fit$transformed_data
+  } else if (type == "empirical") {
+    marginals <- data
+    # Transform by the empirical CDF, with mass 'smeared' out so that the full range of 0-1 is possible
+    lower <- t(apply(data, 1, function(x) ecdf(x)(x-1e-8)))
+    upper <- t(apply(data, 1, function(x) ecdf(x)(x)))
+    p <- matrix(runif(nrow(data)*ncol(data), lower, upper), nrow=nrow(data), ncol=ncol(data))
+    transformed_data <- qnorm(p) # normalize
   } else {
-    stop("'type' must be one of: 'normal', 'poisson', 'DESeq2'")
+    stop("'type' must be one of: 'normal', 'poisson', 'DESeq2', 'empirical'")
   }
 
   # Cov structure from PCA of the (transformed to have normal marginals) data
@@ -93,8 +100,14 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
       size = 1/marginals$dispersion,
     )
     draws[is.na(draws)] <- 0 # NAs comes from the all-zero rows in the original data
+  } else if (type == "empirical") {
+    p <- pnorm(transformed_draws)
+    draws <- matrix(NA, nrow=nrow(transformed_draws), ncol=ncol(transformed_draws))
+    for (i in 1:nrow(draws)) {
+      draws[i,] <- quantile(marginals[i,], p[i,], type=1)
+    }
   } else {
-    stop("'marginals$type' must be one of: 'normal', 'poisson', 'DESeq2'")
+    stop("'marginals$type' must be one of: 'normal', 'poisson', 'DESeq2', 'empirical'")
   }
 
   rownames(draws) <- random_structure$rownames
@@ -146,7 +159,7 @@ fit_deseq <- function(data) {
   # So we 'smear' the probability of each bin out when converting to normal
   lower <- pnbinom(counts-1, mu = mu, size = 1/dispersions(dds))
   upper <- pnbinom(counts, mu = mu, size = 1/dispersions(dds))
-  p <- matrix(runif(length(counts), lower, upper), nrow=nrow(counts), ncol=ncol(counts))
+  p <- matrix(runif(nrow(counts)*ncol(counts), lower, upper), nrow=nrow(counts), ncol=ncol(counts))
 
   transformed_data <- qnorm(p)
 

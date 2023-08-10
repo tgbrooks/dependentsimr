@@ -8,7 +8,7 @@ These often mean that simulators assume independence of the measurements, which 
 
 Here, we give a simple solution to both of these problems by using a low-rank correlation matrix to both approximate realistic dependencies in a real dataset and generate simulated data mimicking the real data.
 Using a NORTA (Normal to Anything) approach, the marginal (univariate) distributions can have realistic forms like the negative binomial appropriate for omics datasets like RNA-seq read counts.
-Our implementation supports normal, Poisson, and [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)-based (negative binomial with sample-specific size factors) marginal distributions.
+Our implementation supports normal, Poisson, [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)-based (negative binomial with sample-specific size factors), and empirical (for ordinal data) marginal distributions.
 This makes it particularly suited to RNA-seq data but also widely applicable.
 
 Using this, simulating data that matches a given `data` (with samples in columns and measurements/features in rows) with each feature having a negative binomial distribution (fit by DESeq2) is fast and simple:
@@ -39,7 +39,7 @@ Choosing a $k$ between these extremes avoids both of these problems and can be d
 Omics data is rarely normally distributed.
 The NORTA approach to generating data from other distributions with dependence is to first generate data with a multivariate normal distribution with a specified covariance matrix.
 Then each variable is transformed to its desired marginal distribution via first the CDF of the normal distribution and then the inverse CDF of its marginal distribution.
-This easily allows data to be simulated with arbitrary distributions, including discrete distributions such as Poisson or negative binomial.
+This easily allows data to be simulated with arbitrary distributions, including discrete distributions such as Poisson or negative binomial and arbitrary empirical distributions.
 However, the step of generating multivariate normal data from a covariance matrix is generally slow in existing packages as it requires a Cholesky decomposition of the covariance matrix, an operation that takes $O(p^3)$ time and is computationally expensive for omics-scale problems.
 
 Since we already want to use a low-rank covariance matrix, we adapt the NORTA approach to directly generate low-rank multivariate normal data, thereby avoiding the expensive and redundant decomposition.

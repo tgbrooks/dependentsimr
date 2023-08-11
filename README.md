@@ -64,7 +64,7 @@ We will generate an output $p$-vector $X'$ of a single sample whose distribution
 3. Take the PCA of $Z_{ij}$, i.e., the $k$ highest singular values $\lambda_1, \ldots, \lambda_k$ and their left-singular vectors $U = \left[u_1, \ldots, u_k\right]$. Note that $U D^2 U^T$ is the rank $k$ approximation to the correlation matrix $Z Z^T$ of $Z_{ij}$ where $D$ is the diagonal matrix with $\lambda_1, \ldots, \lambda_k$ on its diagonal. This is because the normalization of $Z$ means that $Z$ is already centered and scaled.
 4. Compute the remaining variance for each variance by $M_{i} = \sum_{j} Z_{ij}^2/(n-1) - (UD^2U^T)_{ii}/(n-1)$.
 5. Generate $k$ i.i.d. standard normally distributed values $w^T = \left[w_1, \ldots, w_k\right]$.
-6. Generate $p \times n$ independent normally distributed values $V_{ij}$ with mean 0 and standard deviation $\sqrt{M_i}$.
+6. Generate $p$ independent normally distributed values $V_{i}$ with mean 0 and standard deviation $\sqrt{M_i}$.
 7. Set $Z' = UDw/\sqrt{n-1} + V$.
 8. Output $X'_i = F_i^{-1}(\Phi(Z'))$.
 

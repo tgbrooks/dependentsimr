@@ -36,7 +36,7 @@ ggplot() +
   geom_abline(slope=1, intercept=0)
 
 # Plot gene-gene correlation ---------------------------
-N_rows <- 1000
+N_rows <- 2000
 high_expr_rows <- which(apply(read_data, 1, mean) > 100)
 sample_rows <- sample(high_expr_rows, N_rows)
 real_corr <- cor(t(scaled_read_data[sample_rows,]))

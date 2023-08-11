@@ -71,7 +71,9 @@ get_random_structure <- function(datasets, rank, types="normal") {
 
   # We compute variances without centering the data - since the transformation to normal
   # already 'centers' it (same reason we don't center/scale before SVD)
-  variances <- apply(transformed_data_matrix^2, 1, sum) / (n-1)
+  # Require all to have at least variance 1 - we expect them all to have exactly variance 1
+  # since we have transformed to standard normal, but they do not exactly equal 1 in general
+  variances <- pmax(apply(transformed_data_matrix^2, 1, sum) / (n-1), 1)
 
   return(list(
     type = types,

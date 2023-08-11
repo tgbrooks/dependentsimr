@@ -9,11 +9,11 @@ mode(read_data) <- "integer"
 rownames(read_data) <- liver[ ,1]
 
 # Run dependent_sim on this data --------------------
-rs <- get_random_structure(read_data, rank=2, type="DESeq2")
-draws <- draw_from_multivariate_corr(rs, n_samples=100)
+rs <- get_random_structure(list(counts=read_data), rank=2, type="DESeq2")
+draws <- draw_from_multivariate_corr(rs, n_samples=100)$counts
 
 rs_indep <- remove_dependence(rs)
-indep_draws <- draw_from_multivariate_corr(rs_indep, n_samples=100)
+indep_draws <- draw_from_multivariate_corr(rs_indep, n_samples=100)$counts
 
 # Scale to Counts Per Million ------------------------
 cpm <- function(x) { # counts per million

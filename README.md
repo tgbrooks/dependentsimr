@@ -14,9 +14,13 @@ This makes it particularly suited to RNA-seq data but also widely applicable.
 Using this, simulating data that matches a given `data` (with samples in columns and measurements/features in rows) with each feature having a negative binomial distribution (fit by DESeq2) is fast and simple:
 
 ``` R
-random_structure <- get_random_structure(data, rank = 2, type = "DESeq2")
+random_structure <- get_random_structure(list(data=data), rank = 2, type = "DESeq2")
 simulated_data <- draw_from_multivariate_corr(random_structure, n_samples = 20)
 ```
+
+Finally, this also supports simultaneously generating multiple 'modes' of data, such as happens in multi-omics, where each node can have a distinct marginal distribution type.
+For example, proteomics might have normal margins and RNA-seq the DESeq2 margins.
+This captures cross-mode dependencies observed in the data as well as intra-mode.
 
 ## Covariance matrices
 Suppose that we have a dataset with $n$ samples and $p$ measurements and the data stored in the $p \times n$ matrix $X$.
@@ -107,7 +111,7 @@ Other NORTA-based R packages that may be applicable, at least for datasets with 
 The `bigsimr` package provides faster implementations of these methods to scale up to omics-level data.
 Though even this is computationally demanding; their paper references generating 20,000-dimensional vectors in "under an hour" using 16 threads.
 The `copula` package provides even more flexible dependence options through use of copulas (the NORTA approach is equivalent to using Gaussian copulas).
-All of these packages provide more flexibility in specifying dependence than our package, which can only mimic an existing dataset, and therefore the longer run-times may be unavoidable for use cases where researchers need to parameterize the dependence structure.
+All of these packages provide more flexibility in specifying dependence than our package, which can only mimic existing datasets, and therefore the longer run-times may be unavoidable for use cases where researchers need to parameterize the dependence structure.
 
 The `corpcor` package provides a James-Stein style shrinkage estimator of the covariance matrix for sample-limited cases like omics.
 For inference, this is superior to our simple rank $k$ approximation, however for simulation, shrinkage of variance is not desirable as the generated data does not reflect a realistic level of variation.

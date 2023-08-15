@@ -1,15 +1,43 @@
-library(DESeq2)
-
+#' Compute structure of dependency from a given data
+#'
+#' @param datasets A list of data matrices that we will mimic. All datasets have samples in the columns and features (e.g., genes, proteins) in the rows. All datasets must have the same samples in corresponding columns.
+#' @param rank Number of PCA components to approximate the dependence structure of.
+#' @param types The marginal distribution types ('normal', 'poisson', 'DESeq2', or 'empirical'), as a list with entries corresponding to datasets. If just a single value is provided, then it is used for all datasets.
+#'
+#' @return A random structure element suitable for use with draw_from_multivariate_corr().
+#' @export
+#'
+#' @examples
+#' # A small amount of RNA-seq read count data
+#' d <- c(
+#'   3563,      3839,      3407,      3745,      4063,      3089,      3219,      4577,      3769,
+#'   0,         0,         0,         0,         0,         0,         0,         0,         0,
+#'   0,         0,         0,         0,         0,         0,         0,         0,         0,
+#'   3626,      2630,      5470,      4230,      4739,      4499,      5862,      6524,      3621,
+#'   317,       310,       254,       449,       431,       463,       292,       325,       299,
+#'   0,         0,         0,         0,         0,         0,         0,         0,         0,
+#'   0,         0,         0,         0,         0,         0,         0,         0,         0,
+#'   0,         0,         0,         0,         0,         0,         0,         0,         0,
+#'   0,         0,         0,         0,         0,         0,         0,         0,         0,
+#'   3,         2,         0,         1,         5,         3,         9,         1,         2,
+#'   2,         1,         0,         2,         0,         0,         0,         0,         0,
+#'   0,         0,         0,         0,         0,         0,         0,         0,         0,
+#'   1,         0,         0,         0,         1,         0,         0,         0,         0,
+#'   1,         1,         2,         0,         0,         1,         0,         0,         1,
+#'   0,         0,         0,         0,         0,         0,         0,         0,         0,
+#'   984,      1014,       777,      1211,      1174,      1096,       973,      1193,      1083,
+#'   0,         0,         0,         0,         0,         0,         0,         0,         0,
+#'   16,        15,        16,         9,        23,        10,        25,        10,         8,
+#'   4473,      3954,      4476,      3965,      4606,      3788,      4084,      4316,      3658,
+#'   0,         0,         0,         0,         0,         0,         0,         1,         0
+#' )
+#'
+#' read_counts <- matrix(d, nrow=20, ncol=9, byrow=TRUE)
+#'
+#' # Simulate draws mimicking that data
+#' rs_deseq <- get_random_structure(list(data=read_counts), rank=2, type="DESeq2")
+#' draws_deseq <- draw_from_multivariate_corr(rs_deseq, n_samples=30)
 get_random_structure <- function(datasets, rank, types="normal") {
-  # Compute the marginal and covariance structure from given data
-  # Computes only the top 'rank' part of the covariance structure
-  
-  # datasets is a list of data matrices, with each entry a matrix, which all have common columns
-  # (i.e., they all have n columns and the ith column of one corresponds to the ith column of another).
-  # types is a list with values that are all in: 'normal', 'poisson', 'DESeq2', or 'empirical' specifying the
-  # maginal distribution type to use for the corresponding data in datasets.
-  # If just a single value is provided, then this is used for all data in datasets.
-
   if (length(types) == 1) {
     # use this type for all data matrices
     types <- lapply(datasets, function(x) types[1])
@@ -101,24 +129,42 @@ get_random_structure <- function(datasets, rank, types="normal") {
   ))
 }
 
+#' Draw random samples from the given random structure
+#'
+#' @param random_structure The structure of the random data to draw, computed by get_random_structure()
+#' @param n_samples The number of samples to generate
+#' @param size_factors Vector of length n_samples of size factors for DESeq2-type data. By default, all samples are given 1. Not used if no datasets has type DESeq2.
+#'
+#' @return A list of generated datasets. List names correspond to those of the datasets used to generate the random structure. Each dataset has n_samples columns.
+#' @export
+#'
+#' @examples
+#' #' # Generate example data with Sigma as its covariance matrix
+#' library(MASS)
+#' Sigma = matrix(c(
+#'   1,      0.8,    0,  0,  0,  0,
+#'   0.8,    1,      0,  0,  0,  0,
+#'   0,      0,      1,  0,  0,  0,
+#'   0,      0,      0,  1,  0,  0,
+#'   0,      0,      0,  0,  1,  0.3,
+#'   0,      0,      0,  0,  0.3, 1
+#' ), nrow=6, ncol=6)
+#' norm_data <- t(mvrnorm(n=20, mu=c(0,0,0,0,0,0), Sigma=Sigma))
+#'
+#' # Simulate draws mimicking that data
+#' rs_normal <- get_random_structure(list(data=norm_data), rank=2, type="normal")
+#' draws_normal <- draw_from_multivariate_corr(rs_normal, n_samples=30)
 draw_from_multivariate_corr <- function(random_structure, n_samples, size_factors=NULL) {
-  # Samples from a multivariate distribution that has:
-  # - each variable has the specified marginal distribution
-  # - the same covariance in the top principal components observed in (normalized) data
-  # 'size_factors' is used only when random_structure$type is DESeq2, in which case it is a vector
-  # of length n_samples with the size factors (1 means average library size, 2 means twice the read depth, etc.)
-  # By default size_factors is set to all 1s, so all libraries have approximately the same size
-  
   k <- random_structure$rank
   n_features <- random_structure$n_features
   pc <- random_structure$cov
-  
+
   # Draw from the multivariate normal distribution with the dependence structure of the pc
   # but done efficiently by transforming to a standard normal
   indep_draws <- matrix(rnorm(k*n_samples), c(k, n_samples))
   sdev <- diag(head(random_structure$pc_factor_sizes, k), nrow=k)
   pc_draws <- pc$u %*% sdev %*% indep_draws
-  
+
   # Add in the missing variance to match the actual data
   # by drawing independent data with the appropriate variance
   pc_var <- apply((pc$u %*% sdev)^2, 1, sum) # variance we already accounted for
@@ -165,16 +211,37 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
       stop("'marginals$type' must be one of: 'normal', 'poisson', 'DESeq2', 'empirical'")
     }
     rownames(draws[[dataname]]) <- random_structure$rownames[[dataname]]
-    
+
     start_row <- start_row + n_features
   }
 
   return(draws)
 }
 
+#' Remove all dependence in a random structure
+#'
+#' @param random_structure A random structure from get_random_structure()
+#'
+#' @return The random structure with dependency removed, so all data generated from it will be independent.
+#' @export
+#'
+#' @examples
+#' library(MASS)
+#' Sigma = matrix(c(
+#'   1,      0.8,    0,  0,  0,  0,
+#'   0.8,    1,      0,  0,  0,  0,
+#'   0,      0,      1,  0,  0,  0,
+#'   0,      0,      0,  1,  0,  0,
+#'   0,      0,      0,  0,  1,  0.3,
+#'   0,      0,      0,  0,  0.3, 1
+#' ), nrow=6, ncol=6)
+#' norm_data <- t(mvrnorm(n=20, mu=c(0,0,0,0,0,0), Sigma=Sigma))
+#'
+#' # Simulate draws mimicking that data but without any dependence
+#' rs_normal <- get_random_structure(list(data=norm_data), rank=2, type="normal")
+#' rs_indep <- remove_dependence(rs_normal)
+#' draws_indep <- draw_from_multivariate_corr(rs_indep, n_samples=30)
 remove_dependence <- function(random_structure) {
-  # Returns another random structure that has 0 dependence
-  # for comparison with the dependent version
   new_structure = random_structure
   new_structure$pc_factor_sizes = rep(0, random_structure$rank)
   return(new_structure)
@@ -202,21 +269,22 @@ fit_deseq <- function(data) {
   # s_j is the sample-specific size factor to account for differences in read depths
   # alpha_i is the gene's dispersion parameter
   # perform the transformation via negative binomial -> probability -> normal distribution
-  q <- 2^mcols(dds)$Intercept
+  q <- 2^S4Vectors::mcols(dds)$Intercept
   s <- dds$sizeFactor
   mu <- matrix(s, nrow=nrow(data), ncol=ncol(data), byrow=TRUE) * matrix(q, nrow=nrow(data), ncol=ncol(data))
 
-  if (is.null(assays(dds)$replaceCounts)) {
+  if (is.null(SummarizedExperiment::assays(dds)$replaceCounts)) {
     counts <- data
   } else {
     # DESeq2 has removed outliers, so we use that data
-    counts <- assays(dds)$replaceCounts
+    counts <- SummarizedExperiment::assays(dds)$replaceCounts
   }
 
   # this is a discrete distribution
   # So we 'smear' the probability of each bin out when converting to normal
-  lower <- pnbinom(counts-1, mu = mu, size = 1/dispersions(dds))
-  upper <- pnbinom(counts, mu = mu, size = 1/dispersions(dds))
+  disp <- DESeq2::dispersions(dds)
+  lower <- pnbinom(counts-1, mu = mu, size = 1/disp)
+  upper <- pnbinom(counts, mu = mu, size = 1/disp)
   p <- matrix(runif(nrow(counts)*ncol(counts), lower, upper), nrow=nrow(counts), ncol=ncol(counts))
 
   transformed_data <- qnorm(p)
@@ -226,7 +294,7 @@ fit_deseq <- function(data) {
   return(list(
     marginals = list(
       q = q,
-      dispersion = dispersions(dds)
+      dispersion = disp
     ),
     transformed_data = transformed_data
   ))

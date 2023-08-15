@@ -1,0 +1,13 @@
+Package: dependentsimr
+Title: Generate Omics-scale Data With Dependency
+Version: 0.0.0.9000
+Authors@R: 
+    person("Thomas", "Brooks", , "tgbrooks@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-6980-0079 "))
+Description: Using a NORTA/Gaussian copula approach, this package generated simulated data mimicking a target real dataset. It supports normal, Poisson, empirical, and DESeq2 (negative binomial with size factors) marginal distributions. Captures the top k principal components of the data's dependency and efficiently genreates omics-scale data.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    DESeq2

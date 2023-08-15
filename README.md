@@ -65,18 +65,19 @@ We will generate an output $p$-vector $X'$ of a single sample whose distribution
 
 1. Fit marginal distributions to each feature in $X$ to determine CDFs $F_{i}$ for each feature.
 2. Transform $X$ to normalized values by $Z_{ij} = \Phi^{-1}(F_{i}(X_{ij}))$ where $\Phi$ is the CDF of the standard normal distribution.
-3. Take the PCA of $Z_{ij}$, i.e., the $k$ highest singular values $\lambda_1, \ldots, \lambda_k$ and their left-singular vectors $U = \left[u_1, \ldots, u_k\right]$. Note that $U D^2 U^T$ is the rank $k$ approximation to the correlation matrix $Z Z^T$ of $Z_{ij}$ where $D$ is the diagonal matrix with $\lambda_1, \ldots, \lambda_k$ on its diagonal. This is because the normalization of $Z$ means that $Z$ is already centered and scaled.
-4. Compute the remaining variance for each variance by $M_{i} = \sum_{j} Z_{ij}^2/(n-1) - (UD^2U^T)_{ii}/(n-1)$.
-5. Generate $k$ i.i.d. standard normally distributed values $w^T = \left[w_1, \ldots, w_k\right]$.
-6. Generate $p$ independent normally distributed values $V_{i}$ with mean 0 and standard deviation $\sqrt{M_i}$.
-7. Set $Z' = UDw/\sqrt{n-1} + V$.
-8. Output $X'_i = F_i^{-1}(\Phi(Z'))$.
+3. Take the PCA of $Z$, i.e., the $k$ highest singular values $\lambda_1, \ldots, \lambda_k$ and their left-singular vectors $U = \left[u_1, \ldots, u_k\right]$ of $Z$.
+4. Compute the size factors $w$ by solving $A w = B$ where $A_{ij} = \delta_{ij} - \sum_\ell U_{\ell,i}^2 U_{\ell,j}^2$ and $B_{i} = \lambda_i^2/(n-1)^2 - \sum_\ell U_{\ell,i}^2 V_{\ell\ell}$, where $\delta_{ij}$ is the Kronecker delta and $V = Z^T Z / (n-1)$ is the covariance matrix of $Z$. Set $W$ to be the diagonal matrix with $w$ along its diagonal.
+5. Compute the remaining variance for each variance by $M_{i} = V_{ii} - (UW^2U^T)_{ii}$.
+6. Generate $k$ i.i.d. standard normally distributed values $u^T = \left[u_1, \ldots, u_k\right]$.
+7. Generate $p$ independent normally distributed values $v_{i}$ with mean 0 and standard deviation $\sqrt{M_i}$.
+8. Set $Z' = UWu + v$.
+9. Output the vector $X'$ where $X'_i = F_i^{-1}(\Phi(Z'))$.
 
 Each $Z_i'$ is normally distributed with the same standard deviation as $Z_{i \cdot}$, which was constructed to approximately be from the standard normal distribution.
 Therefore, the output $X_i'$ has approximately the fit distribution with CDF $F_i$.
-Moreover, using the transformation from step 2, the $\Phi^{-1} \circ F_i$ to each component of $X'$ gives $Z'$ which has a multivariate normal distribution with covariance matrix $U D^2 U^T/(n-1) + diag(\sqrt{M})$.
-This agrees with the rank $k$ approximation of the empirical covariance matrix of $Z_{ij}$ as desired.
-Note that we use $n-1$ rather than $n$ to obtain an unbiased estimate of variance.
+Moreover, using the transformation from step 2, the $\Phi^{-1} \circ F_i$ to each component of $X'$ gives $Z'$ which has a multivariate normal distribution with covariance matrix $\Sigma = U W^2 U^T + diag(M)$.
+The size factors $W$ were chosen so that $\Sigma$ matches the rank $k$ approximation of the empirical covariance matrix $V$ of $Z_{ij}$ while also having the same diagonal elements as $V$.
+That is, $U_{\cdot i}^T \Sigma U_{\cdot i} = U_{\cdot i}^T V U_{\cdot i}$ and also $\Sigma_{ii} = V_{ii}$.
 
 ## Implementation
 

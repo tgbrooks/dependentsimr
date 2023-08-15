@@ -2,16 +2,14 @@
 library(ggplot2)
 
 # Load the real data ---------------------------------
-liver <- read.delim("C:/Users/tgb/data/circadian_controls/results/Liver/num_reads_all_samples.txt")
-# we choose just 12 samples to use from this large dataset
-read_data <- as.matrix(liver[ ,3:14])
-mode(read_data) <- "integer"
-rownames(read_data) <- liver[ ,1]
+# from GEO: GSE77221
+read_data <- read.delim("data/Weger18.txt.gz")
 
 # Run dependent_sim on this data --------------------
 rs <- get_random_structure(list(counts=read_data), rank=2, type="DESeq2")
 draws <- draw_from_multivariate_corr(rs, n_samples=100)$counts
 
+# Generate simulated data without any dependence
 rs_indep <- remove_dependence(rs)
 indep_draws <- draw_from_multivariate_corr(rs_indep, n_samples=100)$counts
 
@@ -80,9 +78,11 @@ both_data <- data.frame(list(
     rep("indep_sim", nrow(projected_indep_draws))
   )
 ))
+both_data$type <- factor(both_data$type, levels=c("real", "sim", "indep_sim"))
 ggplot(data = both_data, aes(x=PC1, y=PC2,color=type)) +
    geom_point() +
   labs(
     title = "Top 2 PCA Components of the Real Data",
     subtitle = "Real and simulated data (with and without independence) projected onto the PCA components of the real"
-  )
+  ) +
+  scale_color_manual(values = list(real="blue", sim="orange", indep_sim="red"))

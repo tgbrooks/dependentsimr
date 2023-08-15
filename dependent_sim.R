@@ -75,11 +75,23 @@ get_random_structure <- function(datasets, rank, types="normal") {
   # since we have transformed to standard normal, but they do not exactly equal 1 in general
   variances <- pmax(apply(transformed_data_matrix^2, 1, sum) / (n-1), 1)
 
+  # Compute the appropriate scaling for each the PCs, accounting for the overlap
+  # with the independent data that gets added on top
+  # In real omics data, this is very close to just doing: pc_factor_sizes <- udv$d
+  # but for smaller datasets this has a bigger impact
+  rhs <- vapply(1:rank, function(k) {
+    udv$d[k]^2 - sum(udv$u[ ,k]^2 * variances)
+  }, FUN.VALUE=1.0)
+  U2 <- udv$u^2
+  lhs <- diag(rank) - t(U2) %*% U2
+  pc_factor_sizes <- sqrt(solve(lhs, rhs))
+
   return(list(
     type = types,
     rank = rank,
     marginals = marginals,
     cov = udv,
+    pc_factor_sizes = pc_factor_sizes,
     var = variances,
     n_features = dim(transformed_data_matrix)[1],
     n_features_list = lapply(datasets, nrow),
@@ -104,7 +116,7 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
   # Draw from the multivariate normal distribution with the dependence structure of the pc
   # but done efficiently by transforming to a standard normal
   indep_draws <- matrix(rnorm(k*n_samples), c(k, n_samples))
-  sdev <- diag(head(random_structure$cov$d, k), nrow=k)
+  sdev <- diag(head(random_structure$pc_factor_sizes, k), nrow=k)
   pc_draws <- pc$u %*% sdev %*% indep_draws
   
   # Add in the missing variance to match the actual data
@@ -164,7 +176,7 @@ remove_dependence <- function(random_structure) {
   # Returns another random structure that has 0 dependence
   # for comparison with the dependent version
   new_structure = random_structure
-  new_structure$cov$d = rep(0, random_structure$rank)
+  new_structure$pc_factor_sizes = rep(0, random_structure$rank)
   return(new_structure)
 }
 

@@ -36,31 +36,41 @@ ggplot() +
   geom_abline(slope=1, intercept=0)
 
 # Plot gene-gene correlation ---------------------------
-N_rows <- 2000
+N_rows <- 3000
 high_expr_rows <- which(apply(read_data, 1, mean) > 100)
-sample_rows <- sample(high_expr_rows, N_rows)
-real_corr <- cor(t(scaled_read_data[sample_rows,]))
-sim_corr <- cor(t(scaled_draws[sample_rows,1:ncol(read_data)]))
-indep_sim_corr <- cor(t(scaled_indep_draws[sample_rows,1:ncol(read_data)]))
+selected_rows <- sample(high_expr_rows, N_rows)
+selected_samples <- sample(ncol(draws), ncol(read_data))
+real_corr <- cor(t(scaled_read_data[selected_rows,]))
+sim_corr <- cor(t(scaled_draws[selected_rows,selected_samples]))
+indep_sim_corr <- cor(t(scaled_indep_draws[selected_rows,selected_samples]))
 probs <- (1:1000)/1000
 real_corr_q <- quantile(real_corr, probs = probs, na.rm=TRUE)
 sim_corr_q <- quantile(sim_corr, probs = probs, na.rm=TRUE)
 indep_sim_corr_q <- quantile(indep_sim_corr, probs = probs, na.rm=TRUE)
-ggplot(data = data.frame(
+ggplot(data = rbind(data.frame(
     real_corr_q = real_corr_q,
     sim_corr_q = sim_corr_q,
-    indep_sim_corr_q = indep_sim_corr_q
-  )) +
-  geom_point(aes(x = real_corr_q, y = sim_corr_q), color="red") +
-  geom_point(aes(x = real_corr_q, y = indep_sim_corr_q), color="blue") +
-  geom_abline(slope=1, intercept=0)
+    type="dependent"
+  ),
+  data.frame(
+    real_corr_q = real_corr_q,
+    sim_corr_q = indep_sim_corr_q,
+    type = "independent"
+  ))) +
+  geom_point(aes(x = real_corr_q, y = sim_corr_q, color=type)) +
+  geom_abline(slope=1, intercept=0) +
+  labs(
+    x = "Correlation coefficient (real data)",
+    y = "Correlation coefficient (simulated data)",
+    title = "QQ of Simulated Correlation",
+    subtitle = "In 2000 randomly chosen genes, simulated with or without dependence.")
 
 # Plot the top principal components --------------------
 constant_rows <- apply(read_data, 1, function(x) all(x - mean(x) == 0))
-pca <- prcomp(t(scale(read_data[!constant_rows,])), rank.=2, scale.=TRUE)
-projected_read_data <- predict(pca, t(scale(read_data[!constant_rows, ])))
-projected_draws <- predict(pca, t(scale(draws[!constant_rows, ])))
-projected_indep_draws <- predict(pca, t(scale(indep_draws[!constant_rows, ])))
+pca <- prcomp(t(scaled_read_data[!constant_rows,]), rank.=2, scale.=TRUE)
+projected_read_data <- predict(pca, t(scaled_read_data[!constant_rows, ]))
+projected_draws <- predict(pca, t(scaled_draws[!constant_rows, ]))
+projected_indep_draws <- predict(pca, t(scaled_indep_draws[!constant_rows, ]))
 both_data <- data.frame(list(
   PC1 = c(projected_read_data[,"PC1"], projected_draws[,"PC1"], projected_indep_draws[,"PC1"]),
   PC2 = c(projected_read_data[,"PC2"], projected_draws[,"PC2"], projected_indep_draws[,"PC2"]),
@@ -71,4 +81,8 @@ both_data <- data.frame(list(
   )
 ))
 ggplot(data = both_data, aes(x=PC1, y=PC2,color=type)) +
-   geom_point()
+   geom_point() +
+  labs(
+    title = "Top 2 PCA Components of the Real Data",
+    subtitle = "Real and simulated data (with and without independence) projected onto the PCA components of the real"
+  )

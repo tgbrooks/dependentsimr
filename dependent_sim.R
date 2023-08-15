@@ -52,7 +52,7 @@ get_random_structure <- function(datasets, rank, types="normal") {
       marginals[[dataname]] <- fit$marginals
       transformed_data[[dataname]] <- fit$transformed_data
     } else if (type == "empirical") {
-      marginals[dataname] <- data
+      marginals[[dataname]] <- data
       # Transform by the empirical CDF, with mass 'smeared' out so that the full range of 0-1 is possible
       lower <- t(apply(data, 1, function(x) ecdf(x)(x-1e-8)))
       upper <- t(apply(data, 1, function(x) ecdf(x)(x)))

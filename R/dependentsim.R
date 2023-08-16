@@ -7,6 +7,17 @@
 #' @return A random structure element suitable for use with draw_from_multivariate_corr().
 #' @export
 #'
+#' @importFrom stats runif
+#' @importFrom stats qpois
+#' @importFrom stats ppois
+#' @importFrom stats rnorm
+#' @importFrom stats pnorm
+#' @importFrom stats qnorm
+#' @importFrom stats pnbinom
+#' @importFrom stats qnbinom
+#' @importFrom stats quantile
+#' @importFrom stats ecdf
+#'
 #' @examples
 #' # A small amount of RNA-seq read count data
 #' d <- c(
@@ -162,7 +173,7 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
   # Draw from the multivariate normal distribution with the dependence structure of the pc
   # but done efficiently by transforming to a standard normal
   indep_draws <- matrix(rnorm(k*n_samples), c(k, n_samples))
-  sdev <- diag(head(random_structure$pc_factor_sizes, k), nrow=k)
+  sdev <- diag(random_structure$pc_factor_sizes[1:k], nrow=k)
   pc_draws <- pc$u %*% sdev %*% indep_draws
 
   # Add in the missing variance to match the actual data
@@ -247,7 +258,14 @@ remove_dependence <- function(random_structure) {
   return(new_structure)
 }
 
+#' @importFrom stats pnbinom
+#' @importFrom stats runif
+#' @importFrom stats qnorm
 fit_deseq <- function(data) {
+  rlang::check_installed("DESeq2", reason="Using type='DESeq2' requires DESeq2")
+  rlang::check_installed("S4Vectors", reason="Using type='DESeq2' requires S4Vectors")
+  rlang::check_installed("SummarizedExperiment", reason="Using type='DESeq2' requires SummarizedExperiment")
+
   # Use DESeq2 to fit the marginal distributions (negative binomial)
   dummy <- as.matrix(rep(1, dim(data)[2]))
   rownames(dummy) <- colnames(data)

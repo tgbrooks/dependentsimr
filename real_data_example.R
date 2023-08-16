@@ -3,10 +3,10 @@ library(ggplot2)
 
 # Load the real data ---------------------------------
 # from GEO: GSE77221
-read_data <- read.delim("data/Weger18.txt.gz")
+head(Weger18)
 
 # Run dependent_sim on this data --------------------
-rs <- get_random_structure(list(counts=read_data), rank=2, type="DESeq2")
+rs <- get_random_structure(list(counts=Weger18), rank=2, type="DESeq2")
 draws <- draw_from_multivariate_corr(rs, n_samples=100)$counts
 
 # Generate simulated data without any dependence
@@ -17,7 +17,7 @@ indep_draws <- draw_from_multivariate_corr(rs_indep, n_samples=100)$counts
 cpm <- function(x) { # counts per million
   return(t(t(x) / apply(x, 2, sum) * 1e6))
 }
-scaled_read_data <- cpm(read_data)
+scaled_read_data <- cpm(Weger18)
 scaled_draws <- cpm(draws)
 scaled_indep_draws <- cpm(indep_draws)
 
@@ -35,9 +35,9 @@ ggplot() +
 
 # Plot gene-gene correlation ---------------------------
 N_rows <- 3000
-high_expr_rows <- which(apply(read_data, 1, mean) > 100)
+high_expr_rows <- which(apply(Weger18, 1, mean) > 100)
 selected_rows <- sample(high_expr_rows, N_rows)
-selected_samples <- sample(ncol(draws), ncol(read_data))
+selected_samples <- sample(ncol(draws), ncol(Weger18))
 real_corr <- cor(t(scaled_read_data[selected_rows,]))
 sim_corr <- cor(t(scaled_draws[selected_rows,selected_samples]))
 indep_sim_corr <- cor(t(scaled_indep_draws[selected_rows,selected_samples]))
@@ -64,7 +64,7 @@ ggplot(data = rbind(data.frame(
     subtitle = "In 2000 randomly chosen genes, simulated with or without dependence.")
 
 # Plot the top principal components --------------------
-constant_rows <- apply(read_data, 1, function(x) all(x - mean(x) == 0))
+constant_rows <- apply(Weger18, 1, function(x) all(x - mean(x) == 0))
 pca <- prcomp(t(scaled_read_data[!constant_rows,]), rank.=2, scale.=TRUE)
 projected_read_data <- predict(pca, t(scaled_read_data[!constant_rows, ]))
 projected_draws <- predict(pca, t(scaled_draws[!constant_rows, ]))

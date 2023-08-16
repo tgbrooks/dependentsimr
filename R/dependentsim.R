@@ -276,7 +276,9 @@ fit_deseq <- function(data) {
     dummy,
     ~ 1
   )
-  dds <- DESeq2::DESeq(dds)
+  suppressWarnings({
+    dds <- DESeq2::DESeq(dds)
+  }) # Get a warning about design is constant - this is intended
 
   # Use the DESeq-fit model to transform the data to approximate normal
   # DESeq has the following model:
@@ -302,7 +304,9 @@ fit_deseq <- function(data) {
   # So we 'smear' the probability of each bin out when converting to normal
   disp <- DESeq2::dispersions(dds)
   lower <- pnbinom(counts-1, mu = mu, size = 1/disp)
+  lower[is.na(lower)] <- 0
   upper <- pnbinom(counts, mu = mu, size = 1/disp)
+  upper[is.na(upper)] <- 1
   p <- matrix(runif(nrow(counts)*ncol(counts), lower, upper), nrow=nrow(counts), ncol=ncol(counts))
 
   transformed_data <- qnorm(p)

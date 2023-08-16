@@ -15,7 +15,9 @@ Suggests:
     DESeq2,
     S4Vectors,
     SummarizedExperiment,
-    MASS
+    MASS,
+    testthat (>= 3.0.0)
 Depends: 
     R (>= 2.10)
 LazyData: true
+Config/testthat/edition: 3

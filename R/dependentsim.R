@@ -173,7 +173,7 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
   # Draw from the multivariate normal distribution with the dependence structure of the pc
   # but done efficiently by transforming to a standard normal
   indep_draws <- matrix(rnorm(k*n_samples), c(k, n_samples))
-  sdev <- diag(random_structure$pc_factor_sizes[1:k], nrow=k)
+  sdev <- diag(random_structure$pc_factor_sizes, nrow=k)
   pc_draws <- pc$u %*% sdev %*% indep_draws
 
   # Add in the missing variance to match the actual data

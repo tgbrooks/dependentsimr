@@ -1,5 +1,6 @@
 #  Run dependent_sim on a real RNA-seq dataset
 library(ggplot2)
+library(ggpointdensity)
 
 # Load the real data ---------------------------------
 # from GEO: GSE77221
@@ -26,12 +27,20 @@ simulated_mean <- apply(scaled_draws, 1, mean)
 simulated_variance <- apply(scaled_draws, 1, var)
 real_mean <- apply(scaled_read_data, 1, mean)
 real_variance <- apply(scaled_read_data, 1, var)
-ggplot() +
-  geom_point(aes(x=log(real_mean+1),y=log(simulated_mean+1))) +
-  geom_abline(slope=1, intercept=0)
-ggplot() +
-  geom_point(aes(x=log(real_variance+1),y=log(simulated_variance+1))) +
-  geom_abline(slope=1, intercept=0)
+marg_dist <- data.frame(
+  real_mean = real_mean,
+  simulated_mean = simulated_mean,
+  real_variance = real_variance,
+  simulated_variance = simulated_variance
+  ) %>% filter(real_mean > 0.1)
+ggplot(marg_dist)+
+  geom_pointdensity(aes(x=log(real_mean+1),y=log(simulated_mean+1))) +
+  geom_abline(slope=1, intercept=0) +
+  scale_color_gradient(trans="log")
+ggplot(marg_dist)+
+  geom_pointdensity(aes(x=log(real_variance+1),y=log(simulated_variance+1))) +
+  geom_abline(slope=1, intercept=0) +
+  scale_color_gradient(trans="log")
 
 # Plot gene-gene correlation ---------------------------
 N_rows <- 3000

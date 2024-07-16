@@ -300,9 +300,13 @@ fit_deseq <- function(data) {
     counts <- SummarizedExperiment::assays(dds)$replaceCounts
   }
 
+  # We use the basic MLE estimates of dispersion from DESeq2 since the moderated
+  # dispersion estimates bias the data such that the simulation is not realistic
+  # even though over-estimating dispersion (for low read counts) is fine for inference.
+  disp <- S4Vectors::mcols(dds)$dispGeneEst
+
   # this is a discrete distribution
   # So we 'smear' the probability of each bin out when converting to normal
-  disp <- DESeq2::dispersions(dds)
   lower <- pnbinom(counts-1, mu = mu, size = 1/disp)
   lower[is.na(lower)] <- 0
   upper <- pnbinom(counts, mu = mu, size = 1/disp)

@@ -4,12 +4,14 @@
 \alias{get_random_structure}
 \title{Compute structure of dependency from a given data}
 \usage{
-get_random_structure(datasets, rank, types = "normal")
+get_random_structure(datasets, method, rank = 2, types = "normal")
 }
 \arguments{
 \item{datasets}{A list of data matrices that we will mimic. All datasets have samples in the columns and features (e.g., genes, proteins) in the rows. All datasets must have the same samples in corresponding columns.}
 
-\item{rank}{Number of PCA components to approximate the dependence structure of.}
+\item{method}{Either 'pca' or 'corp.cor', for the method of determining a dependency structure}
+
+\item{rank}{Number of PCA components to approximate the dependence structure of. Only used if method = 'pca'.}
 
 \item{types}{The marginal distribution types ('normal', 'poisson', 'DESeq2', or 'empirical'), as a list with entries corresponding to datasets. If just a single value is provided, then it is used for all datasets.}
 }
@@ -47,6 +49,6 @@ d <- c(
 read_counts <- matrix(d, nrow=20, ncol=9, byrow=TRUE)
 
 # Simulate draws mimicking that data
-rs_deseq <- get_random_structure(list(data=read_counts), rank=2, type="DESeq2")
+rs_deseq <- get_random_structure(list(data=read_counts), method="pca", rank=2, type="DESeq2")
 draws_deseq <- draw_from_multivariate_corr(rs_deseq, n_samples=30)
 }

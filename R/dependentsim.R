@@ -1,7 +1,8 @@
 #' Compute structure of dependency from a given data
 #'
 #' @param datasets A list of data matrices that we will mimic. All datasets have samples in the columns and features (e.g., genes, proteins) in the rows. All datasets must have the same samples in corresponding columns.
-#' @param rank Number of PCA components to approximate the dependence structure of.
+#' @param method Either 'pca' or 'corp.cor', for the method of determining a dependency structure
+#' @param rank Number of PCA components to approximate the dependence structure of. Only used if method = 'pca'.
 #' @param types The marginal distribution types ('normal', 'poisson', 'DESeq2', or 'empirical'), as a list with entries corresponding to datasets. If just a single value is provided, then it is used for all datasets.
 #'
 #' @return A random structure element suitable for use with draw_from_multivariate_corr().
@@ -46,9 +47,9 @@
 #' read_counts <- matrix(d, nrow=20, ncol=9, byrow=TRUE)
 #'
 #' # Simulate draws mimicking that data
-#' rs_deseq <- get_random_structure(list(data=read_counts), rank=2, type="DESeq2")
+#' rs_deseq <- get_random_structure(list(data=read_counts), method="pca", rank=2, type="DESeq2")
 #' draws_deseq <- draw_from_multivariate_corr(rs_deseq, n_samples=30)
-get_random_structure <- function(datasets, rank, types="normal") {
+get_random_structure <- function(datasets, method, rank=2, types="normal") {
   if (length(types) == 1) {
     # use this type for all data matrices
     types <- lapply(datasets, function(x) types[1])
@@ -62,6 +63,89 @@ get_random_structure <- function(datasets, rank, types="normal") {
   stopifnot(length(unique(numcols)) == 1)
   n <- unique(numcols)[[1]]
 
+  fit <- marginals_and_transform(datasets, types)
+  marginals <- fit$marginals
+  transformed_data <- fit$transformed_data
+  transformed_data_matrix <- do.call(rbind, transformed_data)
+
+  # We compute variances without centering the data - since the transformation to normal
+  # already 'centers' it (same reason we don't center/scale before SVD)
+  # Require all to have at least variance 1 - we expect them all to have exactly variance 1
+  # since we have transformed to standard normal, but they do not exactly equal 1 in general
+  variances <- pmax(apply(transformed_data_matrix^2, 1, sum) / (n-1), 1)
+
+  if (method == "pca") {
+    # Cov structure from PCA of the (transformed to have normal marginals) data
+    udv <- svd(transformed_data_matrix, nu=rank, nv=0)
+    udv$d <- udv$d / sqrt(n-1)
+
+    # Compute the appropriate scaling for each the PCs, accounting for the overlap
+    # with the independent data that gets added on top
+    # In real omics data, this is very close to just doing: pc_factor_sizes <- udv$d
+    # but for smaller datasets this has a bigger impact
+    rhs <- vapply(1:rank, function(k) {
+      udv$d[k]^2 - sum(udv$u[ ,k]^2 * variances)
+    }, FUN.VALUE=1.0)
+    U2 <- udv$u^2
+    lhs <- diag(rank) - t(U2) %*% U2
+    pc_factor_sizes <- sqrt(solve(lhs, rhs))
+
+    return(list(
+      type = types,
+      rank = rank,
+      cov_method = "pca",
+      marginals = marginals,
+      cov = udv,
+      pc_factor_sizes = pc_factor_sizes,
+      var = variances,
+      n_features = dim(transformed_data_matrix)[1],
+      n_features_list = lapply(datasets, nrow),
+      n_samples = n,
+      transformed_data = transformed_data,
+      rownames = lapply(datasets, rownames)
+    ))
+
+  } else if (method == "corpcor") {
+    rlang::check_installed("corpcor", reason="Using method='corpcor' requires corpcor package")
+
+    # Emulate the estimator from corpcor's cov.shrink
+    # using corpcor's estimates for the two lambdas
+    # This shrinks the correlation matrix to the identity and also shrinks the variances towards the median variance.
+    # The end result matrix can be expressed as a decomposition into a independent (i.e., diagonal)
+    # part and dependent (non-diagonal) but low-rank part. In particular, we just calculate the square root of the
+    # dependent part which is only m x n instead of m x m where n is the number of samples and m the number of variables
+    # NOTE: we've already normalized each gene, so the variance shrinkage doesn't do much but we include it anyway
+    n_samples <- dim(transformed_data_matrix)[[2]]
+    lambda <- corpcor::estimate.lambda(t(transformed_data_matrix))
+    lambda.var <- corpcor::estimate.lambda.var(t(transformed_data_matrix))
+    sigma <-  apply(transformed_data_matrix, 1, stats::var) |> sqrt() # standard deviations
+    med_sigma <- stats::median(sigma) # we shrink towards the median standard deviation
+    indep_part <- lambda * (lambda.var * med_sigma + (1 - lambda.var) * sigma)^2
+    dep_part <- sqrt(1 - lambda) * sweep(transformed_data_matrix / sqrt(n_samples-1), 1, lambda.var * med_sigma / sigma + (1 - lambda.var), "*")
+    # Now to reconstruct cov.shrink(t(transformed_data_matrix)) we just do:
+    # cov.shrunk <- diag(indep_part) + dep_part %*% t(dep_part)
+    # NOTE: this doesn't typically work since we cov.shrink centers and scales the data while we did a separate normalization step
+    #       but we don't actually need this value to generate random draws, it's just for demonstration purposes
+
+    return(list(
+      type = types,
+      indep_part = indep_part,
+      dep_part = dep_part,
+      cov_method = "corpcor",
+      marginals = marginals,
+      var = variances,
+      n_features = dim(transformed_data_matrix)[1],
+      n_features_list = lapply(datasets, nrow),
+      n_samples = n_samples,
+      transformed_data = transformed_data,
+      rownames = lapply(datasets, rownames)
+    ))
+  } else {
+    stop("Parameter 'method' must be one of 'pca' or 'corpcor'")
+  }
+}
+
+marginals_and_transform <- function(datasets, types) {
   marginals <- list()
   transformed_data <- list()
   for (dataname in names(datasets)) {
@@ -102,42 +186,7 @@ get_random_structure <- function(datasets, rank, types="normal") {
     }
   }
 
-  transformed_data_matrix <- do.call(rbind, transformed_data)
-
-  # Cov structure from PCA of the (transformed to have normal marginals) data
-  udv <- svd(transformed_data_matrix, nu=rank, nv=0)
-  udv$d <- udv$d / sqrt(n-1)
-
-  # We compute variances without centering the data - since the transformation to normal
-  # already 'centers' it (same reason we don't center/scale before SVD)
-  # Require all to have at least variance 1 - we expect them all to have exactly variance 1
-  # since we have transformed to standard normal, but they do not exactly equal 1 in general
-  variances <- pmax(apply(transformed_data_matrix^2, 1, sum) / (n-1), 1)
-
-  # Compute the appropriate scaling for each the PCs, accounting for the overlap
-  # with the independent data that gets added on top
-  # In real omics data, this is very close to just doing: pc_factor_sizes <- udv$d
-  # but for smaller datasets this has a bigger impact
-  rhs <- vapply(1:rank, function(k) {
-    udv$d[k]^2 - sum(udv$u[ ,k]^2 * variances)
-  }, FUN.VALUE=1.0)
-  U2 <- udv$u^2
-  lhs <- diag(rank) - t(U2) %*% U2
-  pc_factor_sizes <- sqrt(solve(lhs, rhs))
-
-  return(list(
-    type = types,
-    rank = rank,
-    marginals = marginals,
-    cov = udv,
-    pc_factor_sizes = pc_factor_sizes,
-    var = variances,
-    n_features = dim(transformed_data_matrix)[1],
-    n_features_list = lapply(datasets, nrow),
-    n_samples = n,
-    transformed_data = transformed_data,
-    rownames = lapply(datasets, rownames)
-  ))
+  return(list(marginals=marginals, transformed_data=transformed_data))
 }
 
 #' Draw random samples from the given random structure
@@ -163,26 +212,35 @@ get_random_structure <- function(datasets, rank, types="normal") {
 #' norm_data <- t(mvrnorm(n=20, mu=c(0,0,0,0,0,0), Sigma=Sigma))
 #'
 #' # Simulate draws mimicking that data
-#' rs_normal <- get_random_structure(list(data=norm_data), rank=2, type="normal")
+#' rs_normal <- get_random_structure(list(data=norm_data), method="pca", rank=2, type="normal")
 #' draws_normal <- draw_from_multivariate_corr(rs_normal, n_samples=30)
 draw_from_multivariate_corr <- function(random_structure, n_samples, size_factors=NULL) {
-  k <- random_structure$rank
   n_features <- random_structure$n_features
-  pc <- random_structure$cov
+  if (random_structure$cov_method == "pca") {
+    k <- random_structure$rank
+    pc <- random_structure$cov
 
-  # Draw from the multivariate normal distribution with the dependence structure of the pc
-  # but done efficiently by transforming to a standard normal
-  indep_draws <- matrix(rnorm(k*n_samples), c(k, n_samples))
-  sdev <- diag(random_structure$pc_factor_sizes, nrow=k)
-  pc_draws <- pc$u %*% sdev %*% indep_draws
+    # Draw from the multivariate normal distribution with the dependence structure of the pc
+    # but done efficiently by transforming to a standard normal
+    indep_draws <- matrix(rnorm(k*n_samples), c(k, n_samples))
+    sdev <- diag(random_structure$pc_factor_sizes, nrow=k)
+    pc_draws <- pc$u %*% sdev %*% indep_draws
 
-  # Add in the missing variance to match the actual data
-  # by drawing independent data with the appropriate variance
-  pc_var <- apply((pc$u %*% sdev)^2, 1, sum) # variance we already accounted for
-  missing_var <- pmax(random_structure$var - pc_var, 0) # variance left to include as purely independent
-  indep_draws <- matrix(rnorm(n_features*n_samples, sd=rep(sqrt(missing_var), n_samples)), c(n_features, n_samples))
+    # Add in the missing variance to match the actual data
+    # by drawing independent data with the appropriate variance
+    pc_var <- apply((pc$u %*% sdev)^2, 1, sum) # variance we already accounted for
+    missing_var <- pmax(random_structure$var - pc_var, 0) # variance left to include as purely independent
+    indep_draws <- matrix(rnorm(n_features*n_samples, sd=rep(sqrt(missing_var), n_samples)), c(n_features, n_samples))
 
-  transformed_draws_all <- pc_draws + indep_draws
+    transformed_draws_all <- pc_draws + indep_draws
+  } else if (random_structure$cov_method == "corpcor") {
+    k <- dim(random_structure$dep_part)[[2]]
+    dep_draws <- random_structure$dep_part %*% matrix(rnorm(k*n_samples), c(k, n_samples))
+    indep_draws <- matrix(rnorm(n_features*n_samples, sd=rep(sqrt(random_structure$indep_part), n_samples)), c(n_features, n_samples))
+    transformed_draws_all <- dep_draws + indep_draws
+  } else {
+      stop("Unknown method in random_structure")
+  }
 
   start_row <- 1
   draws <- list()
@@ -249,12 +307,19 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
 #' norm_data <- t(mvrnorm(n=20, mu=c(0,0,0,0,0,0), Sigma=Sigma))
 #'
 #' # Simulate draws mimicking that data but without any dependence
-#' rs_normal <- get_random_structure(list(data=norm_data), rank=2, type="normal")
+#' rs_normal <- get_random_structure(list(data=norm_data), method="pca", rank=2, type="normal")
 #' rs_indep <- remove_dependence(rs_normal)
 #' draws_indep <- draw_from_multivariate_corr(rs_indep, n_samples=30)
 remove_dependence <- function(random_structure) {
   new_structure = random_structure
-  new_structure$pc_factor_sizes = rep(0, random_structure$rank)
+  if (new_structure$cov_method == "pca") {
+    new_structure$pc_factor_sizes = rep(0, random_structure$rank)
+  } else if (new_structure$cov_method == "corpcor") {
+    new_structure$dep_part =  0*new_structure$dep_part
+    new_structure$indep_part = rep(1, length(new_structure$indep_part))
+  } else {
+    stop("Unknown method in random structure")
+  }
   return(new_structure)
 }
 

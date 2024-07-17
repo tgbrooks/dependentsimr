@@ -33,6 +33,6 @@ Sigma = matrix(c(
 norm_data <- t(mvrnorm(n=20, mu=c(0,0,0,0,0,0), Sigma=Sigma))
 
 # Simulate draws mimicking that data
-rs_normal <- get_random_structure(list(data=norm_data), rank=2, type="normal")
+rs_normal <- get_random_structure(list(data=norm_data), method="pca", rank=2, type="normal")
 draws_normal <- draw_from_multivariate_corr(rs_normal, n_samples=30)
 }

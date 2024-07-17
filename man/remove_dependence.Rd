@@ -28,7 +28,7 @@ Sigma = matrix(c(
 norm_data <- t(mvrnorm(n=20, mu=c(0,0,0,0,0,0), Sigma=Sigma))
 
 # Simulate draws mimicking that data but without any dependence
-rs_normal <- get_random_structure(list(data=norm_data), rank=2, type="normal")
+rs_normal <- get_random_structure(list(data=norm_data), method="pca", rank=2, type="normal")
 rs_indep <- remove_dependence(rs_normal)
 draws_indep <- draw_from_multivariate_corr(rs_indep, n_samples=30)
 }

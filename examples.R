@@ -12,16 +12,16 @@ Sigma = matrix(c(
 norm_data <- t(mvrnorm(n=20, mu=c(0,0,0,0,0,0), Sigma=Sigma))
 
 # Simulate draws mimicking that data
-rs_normal <- get_random_structure(list(data=norm_data), rank=2, type="normal")
+rs_normal <- get_random_structure(list(data=norm_data), method="pca", rank=2, type="normal")
 draws_normal <- draw_from_multivariate_corr(rs_normal, n_samples=30)
 
 
 ## POISSON DATA ------------------------------------------------
-# Generate dependent Poisson data from the MV normal data 
+# Generate dependent Poisson data from the MV normal data
 pois_data <- qpois(pnorm(norm_data), lambda = c(50, 1000, 2, 10, 0.2, 0.5))
 
 # Simulate draws mimicking that data
-rs_poisson <- get_random_structure(list(data=pois_data), rank=1, type="poisson")
+rs_poisson <- get_random_structure(list(data=pois_data), method="pca",  rank=1, type="poisson")
 draws_poisson <- draw_from_multivariate_corr(rs_poisson, n_samples=30)
 
 ## DESEQ2 DATA -------------------------------------------------
@@ -52,13 +52,13 @@ d <- c(
 read_counts <- matrix(d, nrow=20, ncol=9, byrow=TRUE)
 
 # Simulate draws mimicking that data
-rs_deseq <- get_random_structure(list(data=read_counts), rank=2, type="DESeq2")
+rs_deseq <- get_random_structure(list(data=read_counts),  method="pca", rank=2, type="DESeq2")
 draws_deseq <- draw_from_multivariate_corr(rs_deseq, n_samples=30)
 
 
 ## Empirical fit --------------------------------------------------------
 # Using the same as the DESeq2 data
-rs_emp <- get_random_structure(list(data=read_counts), rank=2, type="empirical")
+rs_emp <- get_random_structure(list(data=read_counts),  method="pca", rank=2, type="empirical")
 draws_emp <- draw_from_multivariate_corr(rs_emp, n_samples=30)
 
 
@@ -75,5 +75,5 @@ types <- list(
   pois = "poisson"
 )
 
-rs_multi <- get_random_structure(datasets, rank=2, types=types)
+rs_multi <- get_random_structure(datasets,  method="pca", rank=2, types=types)
 draws_multi <- draw_from_multivariate_corr(rs_multi, n_samples=10)

@@ -4,7 +4,7 @@ Version: 0.0.0.9000
 Authors@R: 
     person("Thomas", "Brooks", , "tgbrooks@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-6980-0079 "))
-Description: Using a NORTA/Gaussian copula approach, this package generated simulated data mimicking a target real dataset. It supports normal, Poisson, empirical, and DESeq2 (negative binomial with size factors) marginal distributions. Captures the top k principal components of the data's dependency and efficiently genreates omics-scale data.
+Description: Using a NORTA/Gaussian copula approach, this package generated simulated data mimicking a target real dataset. It supports normal, Poisson, empirical, and DESeq2 (negative binomial with size factors) marginal distributions. Captures the top k principal components of the data's dependency and efficiently genreates omics-scale data. Alternatively, this can efficiently use the shrinkage estimator from the corpcor package to generate the random draws instead of top k PCA components.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -16,8 +16,9 @@ Suggests:
     S4Vectors,
     SummarizedExperiment,
     MASS,
+    corpcor,
     testthat (>= 3.0.0)
 Depends: 
-    R (>= 2.10)
+    R (>= 3.10)
 LazyData: true
 Config/testthat/edition: 3

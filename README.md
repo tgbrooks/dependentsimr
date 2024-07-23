@@ -232,6 +232,6 @@ You can install the development version of dependentsimr from
 [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("tgbrooks/dependent_sim")
+# install.packages("remotes")
+remotes::install_github("tgbrooks/dependent_sim")
 ```

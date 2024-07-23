@@ -115,14 +115,19 @@ get_random_structure <- function(datasets, method, rank=2, types="normal") {
     # part and dependent (non-diagonal) but low-rank part. In particular, we just calculate the square root of the
     # dependent part which is only m x n instead of m x m where n is the number of samples and m the number of variables
     # NOTE: we've already normalized each gene, so the variance shrinkage doesn't do much but we include it anyway
+    # NOTE: we zero out the variables that zero variance since otherwise they force the shrinkage of all correlation towards 0
+    orig_variance <- unlist(lapply(datasets, function(x) apply(x, 1, var)))
+    dat <- transformed_data_matrix
+    dat[orig_variance == 0,] <- 0
     n_samples <- dim(transformed_data_matrix)[[2]]
-    lambda <- corpcor::estimate.lambda(t(transformed_data_matrix))
-    lambda.var <- corpcor::estimate.lambda.var(t(transformed_data_matrix))
-    sigma <-  apply(transformed_data_matrix, 1, stats::var) |> sqrt() # standard deviations
+    lambda <- corpcor::estimate.lambda(t(dat))
+    lambda.var <- corpcor::estimate.lambda.var(t(dat))
+    sigma <-  apply(dat, 1, stats::var) |> sqrt() # standard deviations
     med_sigma <- stats::median(sigma) # we shrink towards the median standard deviation
     indep_part <- lambda * (lambda.var * med_sigma + (1 - lambda.var) * sigma)^2
-    dep_part <- sqrt(1 - lambda) * sweep(transformed_data_matrix / sqrt(n_samples-1), 1, lambda.var * med_sigma / sigma + (1 - lambda.var), "*")
-    # Now to reconstruct cov.shrink(t(transformed_data_matrix)) we just do:
+    dep_part <- sqrt(1 - lambda) * sweep(dat / sqrt(n_samples-1), 1, lambda.var * med_sigma / sigma + (1 - lambda.var), "*")
+    dep_part[is.nan(dep_part)] <- 0 # NaNs come in the 0 variance genes
+    # Now to reconstruct cov.shrink(t(dat)) we just do:
     # cov.shrunk <- diag(indep_part) + dep_part %*% t(dep_part)
     # NOTE: this doesn't typically work since we cov.shrink centers and scales the data while we did a separate normalization step
     #       but we don't actually need this value to generate random draws, it's just for demonstration purposes

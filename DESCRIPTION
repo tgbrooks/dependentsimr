@@ -17,7 +17,9 @@ Suggests:
     SummarizedExperiment,
     MASS,
     corpcor,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    Matrix,
+    sparsesvd
 Depends: 
     R (>= 3.10)
 LazyData: true

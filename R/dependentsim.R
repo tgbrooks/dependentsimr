@@ -5,7 +5,7 @@
 #' @param rank Number of PCA components to approximate the dependence structure of. Only used if method = 'pca'.
 #' @param types The marginal distribution types ('normal', 'poisson', 'DESeq2', or 'empirical'), as a list with entries corresponding to datasets. If just a single value is provided, then it is used for all datasets.
 #'
-#' @return A random structure element suitable for use with draw_from_multivariate_corr().
+#' @returns A random structure element suitable for use with draw_from_multivariate_corr().
 #' @export
 #'
 #' @importFrom stats runif
@@ -203,6 +203,7 @@ marginals_and_transform <- function(datasets, types) {
 #' @return A list of generated datasets. List names correspond to those of the datasets used to generate the random structure. Each dataset has n_samples columns.
 #' @export
 #'
+#' @importFrom stats var
 #' @examples
 #' #' # Generate example data with Sigma as its covariance matrix
 #' library(MASS)

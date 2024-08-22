@@ -1,7 +1,7 @@
 #' Compute structure of dependency from a given data
 #'
 #' @param datasets A list of data matrices that we will mimic. All datasets have samples in the columns and features (e.g., genes, proteins) in the rows. All datasets must have the same samples in corresponding columns.
-#' @param method Either 'pca' or 'corp.cor', for the method of determining a dependency structure
+#' @param method One of 'pca', 'spiked Wishart', or 'corp.cor', for the method of determining a dependency structure
 #' @param rank Number of PCA components to approximate the dependence structure of. Only used if method = 'pca'.
 #' @param types The marginal distribution types ('normal', 'poisson', 'DESeq2', or 'empirical'), as a list with entries corresponding to datasets. If just a single value is provided, then it is used for all datasets.
 #'
@@ -104,7 +104,43 @@ get_random_structure <- function(datasets, method, rank=2, types="normal") {
       transformed_data = transformed_data,
       rownames = lapply(datasets, rownames)
     ))
+  } else if (method == "spiked Wishart") {
+    rlang::check_installed("sparsesvd", reason="Using method='spiked Wishart' requires sparsesvd package")
+    rlang::check_installed("Matrix", reason="Using method='spiked Wishart' requires Matrix package")
 
+    # Cov structure from PCA of the (transformed to have normal marginals) data
+    udv <- svd(transformed_data_matrix, nu=rank, nv=0)
+
+    # Don't count zero-variance variables as variables for this
+    orig_variance <- unlist(lapply(datasets, function(x) apply(x, 1, var)))
+    num_vars <- dim(transformed_data_matrix)[1] - sum(orig_variance == 0)
+
+    # Fit the component sizes using a spiked Wishart model
+    spiked_sd <- match_with_spiked_wishart(
+      desired_eigenvalues = udv$d[1:2],
+      rank = 4,
+      num_observations = n-1,
+      num_variables = num_vars,
+      population_sd = 0.77,
+      num_iterations = 20,
+      num_samples_per_iter = 300
+    )
+
+    return(list(
+      type = types,
+      rank = rank,
+      cov_method = "spiked Wishart",
+      marginals = marginals,
+      spiked_sd = spiked_sd,
+      rank = rank,
+      cov = udv,
+      var = variances,
+      n_features = dim(transformed_data_matrix)[1],
+      n_features_list = lapply(datasets, nrow),
+      n_samples = n,
+      transformed_data = transformed_data,
+      rownames = lapply(datasets, rownames)
+    ))
   } else if (method == "corpcor") {
     rlang::check_installed("corpcor", reason="Using method='corpcor' requires corpcor package")
 
@@ -126,7 +162,7 @@ get_random_structure <- function(datasets, method, rank=2, types="normal") {
     med_sigma <- stats::median(sigma) # we shrink towards the median standard deviation
     indep_part <- lambda * (lambda.var * med_sigma + (1 - lambda.var) * sigma)^2
     dep_part <- sqrt(1 - lambda) * sweep(dat / sqrt(n_samples-1), 1, lambda.var * med_sigma / sigma + (1 - lambda.var), "*")
-    dep_part[is.nan(dep_part)] <- 0 # NaNs come in the 0 variance genes
+    dep_part[is.nan(dep_part)] <- 0 # NaNs come in the 0 variance features
     # Now to reconstruct cov.shrink(t(dat)) we just do:
     # cov.shrunk <- diag(indep_part) + dep_part %*% t(dep_part)
     # NOTE: this doesn't typically work since we cov.shrink centers and scales the data while we did a separate normalization step
@@ -239,6 +275,23 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
     indep_draws <- matrix(rnorm(n_features*n_samples, sd=rep(sqrt(missing_var), n_samples)), c(n_features, n_samples))
 
     transformed_draws_all <- pc_draws + indep_draws
+  } else if (random_structure$cov_method == "spiked Wishart") {
+    k <- random_structure$rank
+    pc <- random_structure$cov
+
+    # Draw from the multivariate normal distribution with the dependence structure of the pc
+    # but done efficiently by transforming to a standard normal
+    indep_draws <- matrix(rnorm(k*n_samples), c(k, n_samples))
+    sdev <- diag(random_structure$spiked_sd, nrow=k)
+    pc_draws <- pc$u %*% sdev %*% indep_draws
+
+    # Add in the missing variance to match the actual data
+    # by drawing independent data with the appropriate variance
+    pc_var <- apply((pc$u %*% sdev)^2, 1, sum) # variance we already accounted for
+    missing_var <- pmax(random_structure$var - pc_var, 0) # variance left to include as purely independent
+    indep_draws <- matrix(rnorm(n_features*n_samples, sd=rep(sqrt(missing_var), n_samples)), c(n_features, n_samples))
+
+    transformed_draws_all <- pc_draws + indep_draws
   } else if (random_structure$cov_method == "corpcor") {
     k <- dim(random_structure$dep_part)[[2]]
     dep_draws <- random_structure$dep_part %*% matrix(rnorm(k*n_samples), c(k, n_samples))
@@ -320,6 +373,8 @@ remove_dependence <- function(random_structure) {
   new_structure = random_structure
   if (new_structure$cov_method == "pca") {
     new_structure$pc_factor_sizes = rep(0, random_structure$rank)
+  } else if (new_structure$cov_method == "spiked Wishart") {
+    new_structure$spiked_sd <- rep(0, length(new_structure$spiked_sd))
   } else if (new_structure$cov_method == "corpcor") {
     new_structure$dep_part =  0*new_structure$dep_part
     new_structure$indep_part = rep(1, length(new_structure$indep_part))
@@ -379,13 +434,12 @@ fit_deseq <- function(data) {
   # this is a discrete distribution
   # So we 'smear' the probability of each bin out when converting to normal
   lower <- pnbinom(counts-1, mu = mu, size = 1/disp)
-  lower[is.na(lower)] <- 0
+  lower[is.na(lower)] <- 0.5 # if mu=NA, always give p=0.5
   upper <- pnbinom(counts, mu = mu, size = 1/disp)
-  upper[is.na(upper)] <- 1
+  upper[is.na(upper)] <- 0.5
   p <- matrix(runif(nrow(counts)*ncol(counts), lower, upper), nrow=nrow(counts), ncol=ncol(counts))
 
   transformed_data <- qnorm(p)
-
   # DESeq gives NAs where it can't fit. We replace those with zeros
   transformed_data[is.na(transformed_data)] <- 0
   return(list(

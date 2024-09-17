@@ -55,7 +55,7 @@ sample_spiked_wishart <- function(
 
   main_diagonal = sd[1:last_col] * sqrt(rchisq(n=last_col, df = seq(last_col, 1, -1)))
 
-  middle_diag_offsets = seq(from=1, lenght.out=k-1)
+  middle_diag_offsets = seq(from=1, length.out=k-1)
   middle_diagonals = lapply(middle_diag_offsets, function(i) {
     diagonal_end = min(last_col+i, last_row)
     rnorm(n = (diagonal_end - i), sd = sd[i+1:diagonal_end])
@@ -229,14 +229,13 @@ match_with_spiked_wishart <- function(
   num_eigs = length(desired_eigenvalues)
   spiked_sd <- desired_eigenvalues[1:min(rank, num_eigs)] / sqrt(num_observations) # Starting guess, not very accurate
   if (rank > num_eigs) { spiked_sd <- c(spiked_sd, rep(min(spiked_sd), rank - num_eigs))}
-  print(spiked_sd)
   beta <- 0.9
   jac_est <- NULL
   resid_est <- NULL
   for (i in 1:num_iterations) {
     # Iterate towards convergence
     # See what eigenvalues the current values produce
-    mean_vals <- multi_sample_spiked_wishart_and_jac(num_samples_per_iter, spiked_sd, num_observations, num_variables, population_sd, num_eigs = num_eigs)
+    mean_vals <- multi_sample_spiked_wishart(num_samples_per_iter, spiked_sd, num_observations, num_variables, population_sd, num_eigs = num_eigs)
     eig_means = mean_vals$singular_vals
     jac_mean = mean_vals$jacobian
     if (is.null(jac_est)) {
@@ -251,13 +250,7 @@ match_with_spiked_wishart <- function(
       resid_est <- beta*resid + (1-beta)*resid_est
     }
 
-    learning_rate = 0.1#0.5/i
-    # Gauss-Newton LS
-    #least_sq <- MASS::ginv(jac_est) %*% resid_est
-    #spiked_sd <- spiked_sd + t(least_sq) * learning_rate
-    # SGD
-    #grad_est <- 2*resid_est %*% jac_est
-    #spiked_sd <- spiked_sd + grad_est * learning_rate
+    learning_rate = 0.1
     # Levenberg–Marquardt
     lambda = 1
     delta <- solve(t(jac_est) %*% jac_est + lambda*diag(rep(1, rank)), t(jac_est) %*% resid_est) |> t()

@@ -19,6 +19,8 @@ draws <- draw_from_multivariate_corr(rs, n_samples=N_SAMPLES, size_factors=libra
 rs_corpcor <- get_random_structure(list(counts=Weger18), method="corpcor", type="DESeq2")
 draws_corpcor <- draw_from_multivariate_corr(rs_corpcor, n_samples=N_SAMPLES, size_factors=library_sizes)$counts
 
+rs_wishart <- get_random_structure(list(counts=Weger18), method="spiked Wishart", type="DESeq2")
+draws_wishart <- draw_from_multivariate_corr(rs_wishart, n_samples=N_SAMPLES, size_factors=library_sizes)$counts
 
 # Generate simulated data without any dependence
 rs_indep <- remove_dependence(rs)
@@ -30,6 +32,8 @@ cpm <- function(x) { # counts per million
 }
 scaled_read_data <- cpm(Weger18)
 scaled_draws <- cpm(draws)
+scaled_draws_wishart <- cpm(draws_wishart)
+scaled_draws_corpcor <- cpm(draws_corpcor)
 scaled_indep_draws <- cpm(indep_draws)
 
 # Plot marginal distributions --------------------------

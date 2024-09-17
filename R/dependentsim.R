@@ -117,11 +117,11 @@ get_random_structure <- function(datasets, method, rank=2, types="normal") {
 
     # Fit the component sizes using a spiked Wishart model
     spiked_sd <- match_with_spiked_wishart(
-      desired_eigenvalues = udv$d[1:2],
-      rank = 4,
-      num_observations = n-1,
+      desired_eigenvalues = udv$d[1:(n-1)],
+      rank = rank,
+      num_observations = n-1, # centering means that we lose one degree of freedom
       num_variables = num_vars,
-      population_sd = 0.77,
+      population_sd = 1.0,
       num_iterations = 20,
       num_samples_per_iter = 300
     )

@@ -163,7 +163,7 @@ sample_spiked_wishart_and_jac <- function(
   mat <- sd * base_mat
   udv <- sparsesvd::sparsesvd(mat, rank=num_eigs)
   jacobian <- lapply(1:num_eigs, function(i) {
-    (udv$u[1:k,i] %*% t(udv$v[1:k,i] ) * base_mat[1:k,1:k]) |> as.matrix() |> rowSums()
+    (udv$u[1:k,i] %*% t(udv$v[,i] ) * base_mat[1:k,]) |> as.matrix() |> rowSums()
   })
   jacobian <- do.call(rbind, jacobian)
   return(list(singular_vals = udv$d, jacobian = jacobian))

@@ -116,12 +116,11 @@ get_random_structure <- function(datasets, method, rank=2, types="normal") {
     num_vars <- dim(transformed_data_matrix)[1] - sum(orig_variance == 0)
 
     # Fit the component sizes using a spiked Wishart model
-    spiked_sd <- match_with_spiked_wishart(
+    fit <- match_with_spiked_wishart(
       desired_eigenvalues = udv$d[1:(n-1)],
       rank = rank,
       num_observations = n-1, # centering means that we lose one degree of freedom
       num_variables = num_vars,
-      population_sd = 1.0,
       num_iterations = 20,
       num_samples_per_iter = 300
     )
@@ -131,7 +130,8 @@ get_random_structure <- function(datasets, method, rank=2, types="normal") {
       rank = rank,
       cov_method = "spiked Wishart",
       marginals = marginals,
-      spiked_sd = spiked_sd,
+      spiked_sd = fit$spiked_sd,
+      population_sd = fit$population_sd,
       rank = rank,
       cov = udv,
       var = variances,
@@ -288,7 +288,8 @@ draw_from_multivariate_corr <- function(random_structure, n_samples, size_factor
     # Add in the missing variance to match the actual data
     # by drawing independent data with the appropriate variance
     pc_var <- apply((pc$u %*% sdev)^2, 1, sum) # variance we already accounted for
-    missing_var <- pmax(random_structure$var - pc_var, 0) # variance left to include as purely independent
+    #missing_var <- pmax(random_structure$var - pc_var, 0) # variance left to include as purely independent
+    missing_var <- abs(random_structure$population_sd)
     indep_draws <- matrix(rnorm(n_features*n_samples, sd=rep(sqrt(missing_var), n_samples)), c(n_features, n_samples))
 
     transformed_draws_all <- pc_draws + indep_draws

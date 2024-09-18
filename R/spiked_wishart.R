@@ -118,7 +118,8 @@ sample_spiked_wishart <- function(
 #'   num_eigs = 3
 #' )
 #' res$singular_vals # singular values (of G, i.e., square roots of the eigenvalues of W = G G^T)
-#' res$jacobian # jacobian of the singular values (sqrt of the first eigenvalue) with respect to each of the spiked_sd's
+#' res$jacobian # jacobian of the singular values (sqrt of the eigenvalues) with respect to each of the spiked_sd's
+#' res$pop_sd_grad # Gradient of the singular values with respect to the population_sd parameter
 sample_spiked_wishart_and_jac <- function(
     spiked_sd,
     num_observations,
@@ -163,10 +164,15 @@ sample_spiked_wishart_and_jac <- function(
   mat <- sd * base_mat
   udv <- sparsesvd::sparsesvd(mat, rank=num_eigs)
   jacobian <- lapply(1:num_eigs, function(i) {
-    (udv$u[1:k,i] %*% t(udv$v[,i] ) * base_mat[1:k,]) |> as.matrix() |> rowSums()
+    udv$u[1:k,i] * Matrix::rowSums(base_mat[1:k,] %*% udv$v[,i, drop=FALSE])
   })
   jacobian <- do.call(rbind, jacobian)
-  return(list(singular_vals = udv$d, jacobian = jacobian))
+
+  pop_indexes <- (k+1):nrow(udv$u) # the indexes corresponding to population_sd
+  pop_sd_grad <- lapply(1:num_eigs, function(i) {
+    (udv$u[pop_indexes,i] * Matrix::rowSums(base_mat[pop_indexes,] %*% udv$v[,i,drop=FALSE])) |> sum()
+  }) |> unlist()
+  return(list(singular_vals = udv$d, jacobian = jacobian, pop_sd_grad = pop_sd_grad))
 }
 
 multi_sample_spiked_wishart <- function(
@@ -187,9 +193,13 @@ multi_sample_spiked_wishart <- function(
   jac = array(lapply(samples, function(x) x$jacobian) |> unlist(),
               dim = c(num_eigs, rank, count))
   jac_mean = apply(jac, c(1,2), mean) # mean over the iterations
+
+  pop_sd_grad = array(lapply(samples, function(x) x$pop_sd_grad) |> unlist(), dim= c(num_eigs, count))
+  pop_sd_grad_mean <- apply(pop_sd_grad, 1, mean)
   list(
     singular_vals = eig_means,
-    jacobian = jac_mean
+    jacobian = jac_mean,
+    pop_sd_grad = pop_sd_grad_mean
   )
 }
 
@@ -213,10 +223,11 @@ multi_sample_spiked_wishart <- function(
 #' sampled_eigenvalues <- sample_spiked_wishart(true_spiked_sd, num_variables,
 #'       num_observations, num_eigs=2)
 #' # Fit some spiked SDs that give eigenvalues similar to sampled_eigenvalues
-#' fit_spiked_sd <- match_with_spiked_wishart(sampled_eigenvalues, num_observations, num_variables)
-#' # fit spiked_sd should now be close to giving the specified sampled_eigenvalues (in expectation)
-#' # Fit spiked_sd won't match the original true_spiked_sd too closely since it only
-#' # fits the single sample # that gave  sampled_eigenvalues
+#' fit <- match_with_spiked_wishart(sampled_eigenvalues, num_observations, num_variables)
+#' # fit$spiked_sd should now be close to giving the specified sampled_eigenvalues (in expectation)
+#' # fit$spiked_sd won't match the original true_spiked_sd too closely since it only
+#' # fits the single sample # that gave  sampled_eigenvalue
+#' # fit$population_sd gives fit value for the population SD
 match_with_spiked_wishart <- function(
     desired_eigenvalues,
     rank,
@@ -238,10 +249,13 @@ match_with_spiked_wishart <- function(
     mean_vals <- multi_sample_spiked_wishart(num_samples_per_iter, spiked_sd, num_observations, num_variables, population_sd, num_eigs = num_eigs)
     eig_means = mean_vals$singular_vals
     jac_mean = mean_vals$jacobian
+    pop_grad = mean_vals$pop_sd_grad
     if (is.null(jac_est)) {
       jac_est <- jac_mean
+      pop_grad_est <- pop_grad
     } else {
-      jac_est <- beta*jac_mean + (1- beta)*jac_est
+      jac_est <- beta*jac_mean + (1-beta)*jac_est
+      pop_grad_est <- beta*pop_grad + (1-beta)*pop_grad_est
     }
     resid <- desired_eigenvalues - eig_means
     if (is.null(resid_est)) {
@@ -250,12 +264,15 @@ match_with_spiked_wishart <- function(
       resid_est <- beta*resid + (1-beta)*resid_est
     }
 
-    learning_rate = 0.1
+    # combined Jacobian for derivatives WRT the spiked SDs and the population SD
+    combined <- cbind(jac_est, pop_grad_est)
+
     # Levenberg–Marquardt
     lambda = 1
-    delta <- solve(t(jac_est) %*% jac_est + lambda*diag(rep(1, rank)), t(jac_est) %*% resid_est) |> t()
-    spiked_sd <- spiked_sd + delta
+    delta <- solve(t(combined) %*% combined + lambda*diag(rep(1, rank+1)), t(combined) %*% resid_est) |> t()
+    spiked_sd <- spiked_sd + delta[1:rank]
+    population_sd <- population_sd + delta[rank+1]
   }
-  spiked_sd[1,]
+  list(spiked_sd=spiked_sd, population_sd=population_sd)
 }
 

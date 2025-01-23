@@ -103,7 +103,7 @@ with:
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("tgbrooks/dependent_sim")
+remotes::install_github("tgbrooks/dependentsimr")
 ```
 
 ## Covariance matrices

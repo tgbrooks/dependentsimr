@@ -30,7 +30,7 @@ This makes it particularly suited to RNA-seq data but also widely applicable.
 
 Using this, simulating data that matches a given `data` (with samples in columns and measurements/features in rows) with each feature having a negative binomial distribution is fast and simple:
 
-``` {r example}
+``` {r, eval=FALSE}
 library(dependentsimr)
 head(read_counts) # An RNA-seq dataset
 rs <- get_random_structure(list(counts=as.matrix(read_counts[,-1])), method="pca", rank=2, type="DESeq2")

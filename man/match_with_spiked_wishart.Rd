@@ -6,18 +6,24 @@
 \usage{
 match_with_spiked_wishart(
   desired_eigenvalues,
+  rank,
   num_observations,
   num_variables,
-  num_iterations = 10,
+  population_sd = 1,
+  num_iterations = 20,
   num_samples_per_iter = 300
 )
 }
 \arguments{
 \item{desired_eigenvalues}{Vector of top eigenvalues of sample covariance matrix that should be approximated}
 
+\item{rank}{number of 'spiked' dimensions to fit}
+
 \item{num_observations}{Number of observations (samples, columns) in the data matrix}
 
 \item{num_variables}{Number of variables (features, rows) in the data matrix}
+
+\item{population_sd}{Standard deviation for allnon-spiked dimensions}
 
 \item{num_iterations}{Number of iterations to perform to to optimize. Increase to get a closer fit}
 
@@ -32,14 +38,15 @@ Compute what spiked SD values will give you the desired top eigenvalues by itera
 }
 \examples{
 # First, simulate a dataset with known true values to see if we can get close
-true_spiked_sd = c(500, 100)
-num_variables = 1000
-num_observations = 10-1
-sampled_eigenvalues <- sample_spiked_wishart(true_spiked_sd, num_variables,
-      num_observations, num_eigs=2)
+true_spiked_sd <- c(500, 100)
+num_variables <- 1000
+num_observations <- 10-1
+sampled_eigenvalues <- sample_spiked_wishart(true_spiked_sd, num_observations,
+      num_variables, num_eigs=2)
 # Fit some spiked SDs that give eigenvalues similar to sampled_eigenvalues
-fit_spiked_sd <- match_with_spiked_wishart(sampled_eigenvalues, num_observations, num_variables)
-# fit spiked_sd should now be close to giving the specified sampled_eigenvalues (in expectation)
-# Fit spiked_sd won't match the original true_spiked_sd too closely since it only
-# fits the single sample # that gave  sampled_eigenvalues
+fit <- match_with_spiked_wishart(sampled_eigenvalues, rank=2, num_observations, num_variables)
+# fit$spiked_sd should now be close to giving the specified sampled_eigenvalues (in expectation)
+# fit$spiked_sd won't match the original true_spiked_sd too closely since it only
+# fits the single sample # that gave  sampled_eigenvalue
+# fit$population_sd gives fit value for the population SD
 }

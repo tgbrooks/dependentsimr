@@ -100,7 +100,7 @@ sample_spiked_wishart <- function(
 #' @param num_eigs The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.
 #'
 #' @returns List with both a vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd and all the remaining are population_sd.
-#'  and also the Jacobian, where [[i,j]] is the derivative of the ith singular value with respect to the jth spiked SD
+#'  and also the Jacobian, where `[[i,j]]` is the derivative of the ith singular value with respect to the jth spiked SD
 #'
 #' @importFrom stats rnorm
 #' @importFrom stats rchisq
@@ -111,14 +111,15 @@ sample_spiked_wishart <- function(
 #' # Sample eigenvalues of a covariance matrix of a 10 sample study with 1000 variables such that
 #' # the top two (underlying true distribution of the data, not sample) principal components
 #' # have SDs of 100 and 10 and the remaining 98 have 1
-#' res = sample_spiked_wishart_and_deriv(
+#' res = sample_spiked_wishart_and_jac(
 #'   spiked_sd = c(500, 100),
 #'   num_variables = 1000,
 #'   num_observations = 10-1,
 #'   num_eigs = 3
 #' )
 #' res$singular_vals # singular values (of G, i.e., square roots of the eigenvalues of W = G G^T)
-#' res$jacobian # jacobian of the singular values (sqrt of the eigenvalues) with respect to each of the spiked_sd's
+#' res$jacobian # jacobian of the singular values (sqrt of the eigenvalues)
+#'              # with respect to each of the spiked_sd's
 #' res$pop_sd_grad # Gradient of the singular values with respect to the population_sd parameter
 sample_spiked_wishart_and_jac <- function(
     spiked_sd,
@@ -206,8 +207,10 @@ multi_sample_spiked_wishart <- function(
 #' Compute what spiked SD values will give you the desired top eigenvalues by iteratively solving
 #'
 #' @param desired_eigenvalues Vector of top eigenvalues of sample covariance matrix that should be approximated
+#' @param rank number of 'spiked' dimensions to fit
 #' @param num_observations Number of observations (samples, columns) in the data matrix
 #' @param num_variables Number of variables (features, rows) in the data matrix
+#' @param population_sd Standard deviation for allnon-spiked dimensions
 #' @param num_iterations Number of iterations to perform to to optimize. Increase to get a closer fit
 #' @param num_samples_per_iter Number of eigenvalues to samples to estimate mean eigenvalues for each iteration.
 #'    Increase to get a closer fit
@@ -217,13 +220,13 @@ multi_sample_spiked_wishart <- function(
 #'
 #' @examples
 #' # First, simulate a dataset with known true values to see if we can get close
-#' true_spiked_sd = c(500, 100)
-#' num_variables = 1000
-#' num_observations = 10-1
-#' sampled_eigenvalues <- sample_spiked_wishart(true_spiked_sd, num_variables,
-#'       num_observations, num_eigs=2)
+#' true_spiked_sd <- c(500, 100)
+#' num_variables <- 1000
+#' num_observations <- 10-1
+#' sampled_eigenvalues <- sample_spiked_wishart(true_spiked_sd, num_observations,
+#'       num_variables, num_eigs=2)
 #' # Fit some spiked SDs that give eigenvalues similar to sampled_eigenvalues
-#' fit <- match_with_spiked_wishart(sampled_eigenvalues, num_observations, num_variables)
+#' fit <- match_with_spiked_wishart(sampled_eigenvalues, rank=2, num_observations, num_variables)
 #' # fit$spiked_sd should now be close to giving the specified sampled_eigenvalues (in expectation)
 #' # fit$spiked_sd won't match the original true_spiked_sd too closely since it only
 #' # fits the single sample # that gave  sampled_eigenvalue

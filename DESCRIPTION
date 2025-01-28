@@ -19,8 +19,14 @@ Suggests:
     corpcor,
     testthat (>= 3.0.0),
     Matrix,
-    sparsesvd
+    sparsesvd,
+    knitr,
+    rmarkdown,
+    BiocManager,
+    remotes,
+    tidyverse
 Depends: 
     R (>= 3.10)
 LazyData: true
 Config/testthat/edition: 3
+VignetteBuilder: knitr

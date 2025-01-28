@@ -9,7 +9,7 @@ get_random_structure(datasets, method, rank = 2, types = "normal")
 \arguments{
 \item{datasets}{A list of data matrices that we will mimic. All datasets have samples in the columns and features (e.g., genes, proteins) in the rows. All datasets must have the same samples in corresponding columns.}
 
-\item{method}{Either 'pca' or 'corp.cor', for the method of determining a dependency structure}
+\item{method}{One of 'pca', 'spiked Wishart', or 'corp.cor', for the method of determining a dependency structure}
 
 \item{rank}{Number of PCA components to approximate the dependence structure of. Only used if method = 'pca'.}
 

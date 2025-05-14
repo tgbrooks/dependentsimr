@@ -155,13 +155,13 @@ get_random_structure <- function(datasets, method, rank=2, types="normal") {
     orig_variance <- unlist(lapply(datasets, function(x) apply(x, 1, var)))
     dat <- transformed_data_matrix
     dat[orig_variance == 0,] <- 0
-    n_samples <- dim(transformed_data_matrix)[[2]]
+    n_samples <- dim(dat)[[2]]
     lambda <- corpcor::estimate.lambda(t(dat))
     lambda.var <- corpcor::estimate.lambda.var(t(dat))
-    sigma <-  apply(dat, 1, stats::var) |> sqrt() # standard deviations
-    med_sigma <- stats::median(sigma) # we shrink towards the median standard deviation
-    indep_part <- lambda * (lambda.var * med_sigma + (1 - lambda.var) * sigma)^2
-    dep_part <- sqrt(1 - lambda) * sweep(dat / sqrt(n_samples-1), 1, lambda.var * med_sigma / sigma + (1 - lambda.var), "*")
+    v <-  apply(dat, 1, stats::var) # variances
+    med_v <- stats::median(v) # we shrink towards the median variance
+    indep_part <- lambda * (lambda.var * med_v + (1 - lambda.var) * v)
+    dep_part <- sqrt((1 - lambda) / (n_samples-1)) * sweep(dat, 1, sqrt(lambda.var * med_v / v + (1 - lambda.var)), "*")
     dep_part[is.nan(dep_part)] <- 0 # NaNs come in the 0 variance features
     # Now to reconstruct cov.shrink(t(dat)) we just do:
     # cov.shrunk <- diag(indep_part) + dep_part %*% t(dep_part)

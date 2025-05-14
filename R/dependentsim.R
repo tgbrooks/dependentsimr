@@ -182,7 +182,7 @@ get_random_structure <- function(datasets, method, rank=2, types="normal") {
       rownames = lapply(datasets, rownames)
     ))
   } else {
-    stop("Parameter 'method' must be one of 'pca' or 'corpcor'")
+    stop("Parameter 'method' must be one of 'pca', 'spiked Wishart', or 'corpcor'")
   }
 }
 

@@ -5,7 +5,10 @@ offset_diag <- function(offset, length) {
   )
 }
 
-#' Efficiently sample the eigenvalues of a random Wishart matrix with spiked eigenvalues
+#' Efficiently sample the singular values corresponding to a random Wishart matrix with spiked eigenvalues
+#' Specifically, if W = G G^T with each column of G drawn iid from N(0, Sigma), then W is a Wishart matrix and
+#' this function samples the singular values of G. The eigenvalues of W are just the squares of the singular values.
+#' Here, Sigma is diagonal with its leading entries from spiked_sd^2 and all remaining entries are population_sd^2.
 #'
 #' @param spiked_sd The spiked standard deviations
 #' @param num_observations The number of observations (aka samples or columns)
@@ -13,7 +16,7 @@ offset_diag <- function(offset, length) {
 #' @param population_sd the standard deviation of all non-spiked components (num_variables - length(spiked_sd) of them)
 #' @param num_eigs The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.
 #'
-#' @returns Vector of random eigenvalues of W = G G^T where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd and all the remaining are population_sd.
+#' @returns Vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
 #'
 #' @importFrom stats rnorm
 #' @importFrom stats rchisq
@@ -86,12 +89,12 @@ sample_spiked_wishart <- function(
     mat <- Matrix::sparseMatrix(locs[,1], locs[,2], x=vals)
     singular_vals <- sparsesvd::sparsesvd(mat, rank=num_eigs)$d
   }
-  return(singular_vals^2)
+  return(singular_vals)
 }
 
 
-#' Efficiently sample the eigenvalues of a random Wishart matrix with spiked eigenvalues and compute the derivative
-#' of the singular values with respect to spiked eigenvalues
+#' Efficiently sample the singular values corresponding to a random Wishart matrix with spiked eigenvalues and the Jacobian
+#' I.e., these are the singular values of G if GG^T is Wishart. The square of these give the eigenvalues of the random Wishart matrix.
 #'
 #' @param spiked_sd The spiked standard deviations
 #' @param num_observations The number of observations (aka samples or columns)
@@ -99,8 +102,9 @@ sample_spiked_wishart <- function(
 #' @param population_sd the standard deviation of all non-spiked components (num_variables - length(spiked_sd) of them)
 #' @param num_eigs The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.
 #'
-#' @returns List with both a vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd and all the remaining are population_sd.
-#'  and also the Jacobian, where `[[i,j]]` is the derivative of the ith singular value with respect to the jth spiked SD
+#' @returns List with a vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
+#'  and also the Jacobian, where [[i,j]] is the derivative of the ith singular value with respect to the jth spiked SD and the
+#'  gradient of the population_sd variable
 #'
 #' @importFrom stats rnorm
 #' @importFrom stats rchisq
@@ -111,16 +115,15 @@ sample_spiked_wishart <- function(
 #' # Sample eigenvalues of a covariance matrix of a 10 sample study with 1000 variables such that
 #' # the top two (underlying true distribution of the data, not sample) principal components
 #' # have SDs of 100 and 10 and the remaining 98 have 1
-#' res = sample_spiked_wishart_and_jac(
+#' res = sample_spiked_wishart_and_deriv(
 #'   spiked_sd = c(500, 100),
 #'   num_variables = 1000,
 #'   num_observations = 10-1,
 #'   num_eigs = 3
 #' )
-#' res$singular_vals # singular values (of G, i.e., square roots of the eigenvalues of W = G G^T)
-#' res$jacobian # jacobian of the singular values (sqrt of the eigenvalues)
-#'              # with respect to each of the spiked_sd's
-#' res$pop_sd_grad # Gradient of the singular values with respect to the population_sd parameter
+#' res$singular_vals # singular values of G, (i.e., square roots of the eigenvalues of W = G G^T)
+#' res$jacobian # jacobian of the singular values (sqrt of the first eigenvalue) with respect to each of the spiked_sd's
+#' res$pop_sd_grad # gradient of population_sd parameter
 sample_spiked_wishart_and_jac <- function(
     spiked_sd,
     num_observations,
@@ -129,7 +132,7 @@ sample_spiked_wishart_and_jac <- function(
     num_eigs = 0) {
 
   k = length(spiked_sd)
-  if (num_variables<= k) { stop("Must have num_variables larger than k, the number of spiked values") }
+  if (num_variables <= k) { stop("Must have num_variables larger than k, the number of spiked values") }
   if (num_observations < 1) { stop("num_observations must be at least 1")}
   if (num_eigs == 0) { num_eigs = min(num_observations, num_variables) }
 
@@ -173,9 +176,26 @@ sample_spiked_wishart_and_jac <- function(
   pop_sd_grad <- lapply(1:num_eigs, function(i) {
     (udv$u[pop_indexes,i] * Matrix::rowSums(base_mat[pop_indexes,] %*% udv$v[,i,drop=FALSE])) |> sum()
   }) |> unlist()
+
   return(list(singular_vals = udv$d, jacobian = jacobian, pop_sd_grad = pop_sd_grad))
 }
 
+#' Compute means of each singular value and the mean Jacobian, see sample_spiked_wishart_and_jac
+#'
+#' @param count The number of samples to compute the mean of
+#' @param spiked_sd The spiked standard deviations
+#' @param num_observations The number of observations (aka samples or columns)
+#' @param num_variables The number of variables (aka features or rows)
+#' @param population_sd the standard deviation of all non-spiked components (num_variables - length(spiked_sd) of them)
+#' @param num_eigs The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.
+#'
+#' @returns List with a vector of mean singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
+#'  and also the mean Jacobian, where [[i,j]] is the derivative of the ith singular value with respect to the jth spiked SD, and the
+#'  gradient of the population_sd parameter
+#'
+#' @importFrom stats rnorm
+#' @importFrom stats rchisq
+#' @export
 multi_sample_spiked_wishart <- function(
     count,
     spiked_sd,
@@ -190,13 +210,15 @@ multi_sample_spiked_wishart <- function(
     function(i) { sample_spiked_wishart_and_jac(spiked_sd, num_observations, num_variables, population_sd, num_eigs) }
   )
   eig_means = colMeans(do.call(rbind, lapply(samples, function(x) x$singular_vals)))
-  # Extract derivs into a 3D matrix, last index being the iteration
+
+  # Extract derivs into a 3D array, last index being the iteration
   jac = array(lapply(samples, function(x) x$jacobian) |> unlist(),
               dim = c(num_eigs, rank, count))
   jac_mean = apply(jac, c(1,2), mean) # mean over the iterations
-
+  # Similarly for population SD's gradient
   pop_sd_grad = array(lapply(samples, function(x) x$pop_sd_grad) |> unlist(), dim= c(num_eigs, count))
   pop_sd_grad_mean <- apply(pop_sd_grad, 1, mean)
+
   list(
     singular_vals = eig_means,
     jacobian = jac_mean,
@@ -239,7 +261,7 @@ match_with_spiked_wishart <- function(
     population_sd=1,
     num_iterations=20,
     num_samples_per_iter=300
-    ) {
+) {
   num_eigs = length(desired_eigenvalues)
   spiked_sd <- desired_eigenvalues[1:min(rank, num_eigs)] / sqrt(num_observations) # Starting guess, not very accurate
   if (rank > num_eigs) { spiked_sd <- c(spiked_sd, rep(min(spiked_sd), rank - num_eigs))}

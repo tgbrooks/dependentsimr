@@ -92,6 +92,23 @@ sample_spiked_wishart <- function(
   return(singular_vals)
 }
 
+#' Compute svd using sparsesvd but return a guaranteed number of singular values
+#' since sparsesvd will truncate whenever an svd happens to small even if we set tol=0
+sparsesvd <- function(mat, rank) {
+  udv <- sparsesvd::sparsesvd(mat, rank=rank)
+
+  if (length(udv$d) < rank) {
+    missing <- rank - length(udv$d)
+    num_vars <- dim(udv$u)[[1]]
+    num_obs <- dim(udv$v)[[1]]
+    udv$d <- c(udv$d, rep(0, missing))
+    udv$u <- cbind(udv$u, rep(0, missing*num_vars) |> matrix(num_vars, missing))
+    udv$v <- cbind(udv$v, rep(0, missing*num_obs) |> matrix(num_obs, missing))
+  }
+  udv
+}
+
+
 
 #' Efficiently sample the singular values corresponding to a random Wishart matrix with spiked eigenvalues and the Jacobian
 #' I.e., these are the singular values of G if GG^T is Wishart. The square of these give the eigenvalues of the random Wishart matrix.
@@ -115,7 +132,7 @@ sample_spiked_wishart <- function(
 #' # Sample eigenvalues of a covariance matrix of a 10 sample study with 1000 variables such that
 #' # the top two (underlying true distribution of the data, not sample) principal components
 #' # have SDs of 100 and 10 and the remaining 98 have 1
-#' res = sample_spiked_wishart_and_deriv(
+#' res = sample_spiked_wishart_and_jac(
 #'   spiked_sd = c(500, 100),
 #'   num_variables = 1000,
 #'   num_observations = 10-1,
@@ -166,7 +183,7 @@ sample_spiked_wishart_and_jac <- function(
   vals <- c(main_diagonal, middle_diagonals |> unlist(), bottom_diagonal)
   base_mat <- Matrix::sparseMatrix(locs[,1], locs[,2], x=vals)
   mat <- sd * base_mat
-  udv <- sparsesvd::sparsesvd(mat, rank=num_eigs)
+  udv <- sparsesvd(mat, rank=num_eigs)
   jacobian <- lapply(1:num_eigs, function(i) {
     udv$u[1:k,i] * Matrix::rowSums(base_mat[1:k,] %*% udv$v[,i, drop=FALSE])
   })

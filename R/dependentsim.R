@@ -205,7 +205,7 @@ marginals_and_transform <- function(datasets, types) {
         mean = mean
       )
       # Trivial transform: just standardize the already normal data
-      transformed_data[[dataname]] <- (data - mean) / var
+      transformed_data[[dataname]] <- (data - mean) / sqrt(var)
     } else if (type == "poisson") {
       lambda <- apply(data, 1, mean)
       marginals[[dataname]] <- list(

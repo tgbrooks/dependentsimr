@@ -2,7 +2,10 @@
 % Please edit documentation in R/spiked_wishart.R
 \name{sample_spiked_wishart}
 \alias{sample_spiked_wishart}
-\title{Efficiently sample the eigenvalues of a random Wishart matrix with spiked eigenvalues}
+\title{Efficiently sample the singular values corresponding to a random Wishart matrix with spiked eigenvalues
+Specifically, if W = G G^T with each column of G drawn iid from N(0, Sigma), then W is a Wishart matrix and
+this function samples the singular values of G. The eigenvalues of W are just the squares of the singular values.
+Here, Sigma is diagonal with its leading entries from spiked_sd^2 and all remaining entries are population_sd^2.}
 \usage{
 sample_spiked_wishart(
   spiked_sd,
@@ -24,10 +27,13 @@ sample_spiked_wishart(
 \item{num_eigs}{The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.}
 }
 \value{
-Vector of random eigenvalues of W = G G^T where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd and all the remaining are population_sd.
+Vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
 }
 \description{
-Efficiently sample the eigenvalues of a random Wishart matrix with spiked eigenvalues
+Efficiently sample the singular values corresponding to a random Wishart matrix with spiked eigenvalues
+Specifically, if W = G G^T with each column of G drawn iid from N(0, Sigma), then W is a Wishart matrix and
+this function samples the singular values of G. The eigenvalues of W are just the squares of the singular values.
+Here, Sigma is diagonal with its leading entries from spiked_sd^2 and all remaining entries are population_sd^2.
 }
 \examples{
 set.seed(0)

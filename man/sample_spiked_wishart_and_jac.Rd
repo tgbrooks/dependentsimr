@@ -2,8 +2,8 @@
 % Please edit documentation in R/spiked_wishart.R
 \name{sample_spiked_wishart_and_jac}
 \alias{sample_spiked_wishart_and_jac}
-\title{Efficiently sample the eigenvalues of a random Wishart matrix with spiked eigenvalues and compute the derivative
-of the singular values with respect to spiked eigenvalues}
+\title{Efficiently sample the singular values corresponding to a random Wishart matrix with spiked eigenvalues and the Jacobian
+I.e., these are the singular values of G if GG^T is Wishart. The square of these give the eigenvalues of the random Wishart matrix.}
 \usage{
 sample_spiked_wishart_and_jac(
   spiked_sd,
@@ -25,12 +25,13 @@ sample_spiked_wishart_and_jac(
 \item{num_eigs}{The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.}
 }
 \value{
-List with both a vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd and all the remaining are population_sd.
-and also the Jacobian, where \verb{[[i,j]]} is the derivative of the ith singular value with respect to the jth spiked SD
+List with a vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
+and also the Jacobian, where [\link{i,j}] is the derivative of the ith singular value with respect to the jth spiked SD and the
+gradient of the population_sd variable
 }
 \description{
-Efficiently sample the eigenvalues of a random Wishart matrix with spiked eigenvalues and compute the derivative
-of the singular values with respect to spiked eigenvalues
+Efficiently sample the singular values corresponding to a random Wishart matrix with spiked eigenvalues and the Jacobian
+I.e., these are the singular values of G if GG^T is Wishart. The square of these give the eigenvalues of the random Wishart matrix.
 }
 \examples{
 set.seed(0)
@@ -43,8 +44,7 @@ res = sample_spiked_wishart_and_jac(
   num_observations = 10-1,
   num_eigs = 3
 )
-res$singular_vals # singular values (of G, i.e., square roots of the eigenvalues of W = G G^T)
-res$jacobian # jacobian of the singular values (sqrt of the eigenvalues)
-             # with respect to each of the spiked_sd's
-res$pop_sd_grad # Gradient of the singular values with respect to the population_sd parameter
+res$singular_vals # singular values of G, (i.e., square roots of the eigenvalues of W = G G^T)
+res$jacobian # jacobian of the singular values (sqrt of the first eigenvalue) with respect to each of the spiked_sd's
+res$pop_sd_grad # gradient of population_sd parameter
 }

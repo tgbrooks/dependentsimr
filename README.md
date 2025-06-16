@@ -51,7 +51,14 @@ with:
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("tgbrooks/dependent_sim")
+remotes::install_github("tgbrooks/dependentsimr")
+```
+
+The package is also being submitted to CRAN and will become available
+as:
+
+``` r
+install.packages("dependentsimr")
 ```
 
 ## Vignette

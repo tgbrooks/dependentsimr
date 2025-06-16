@@ -1,32 +1,32 @@
 Package: dependentsimr
-Title: Generate Omics-scale Data With Dependency
+Title: Simulate Omics-scale Data With Dependency
 Version: 0.0.0.9000
 Authors@R: 
-    person("Thomas", "Brooks", , "tgbrooks@gmail.com", role = c("aut", "cre"),
+    person("Thomas", "Brooks", , "tgbrooks@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-6980-0079 "))
-Description: Using a NORTA/Gaussian copula approach, this package generated simulated data mimicking a target real dataset. It supports normal, Poisson, empirical, and DESeq2 (negative binomial with size factors) marginal distributions. Captures the top k principal components of the data's dependency and efficiently genreates omics-scale data. Alternatively, this can efficiently use the shrinkage estimator from the corpcor package to generate the random draws instead of top k PCA components.
+Description: Using a Gaussian copula approach, this package generates simulated data mimicking a target real dataset. It supports normal, Poisson, empirical, and DESeq2 (negative binomial with size factors) marginal distributions. It uses an low-rank plus diagonal covariance matrix to efficiently generate omics-scale data.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Imports: 
-    rlang
+    rlang (>= 1.0.0)
 Suggests:
-    DESeq2,
-    S4Vectors,
-    SummarizedExperiment,
-    MASS,
-    corpcor,
+    DESeq2 (>= 1.40.0),
+    S4Vectors (>= 0.44.0),
+    SummarizedExperiment (>= 1.36.0),
+    MASS (>= 7.3),
+    corpcor (>= 1.6.0),
     testthat (>= 3.0.0),
-    Matrix,
-    sparsesvd,
-    knitr,
+    Matrix (>= 1.7),
+    sparsesvd (>= 0.2),
+    knitr (>= 1.50),
     rmarkdown,
     BiocManager,
     remotes,
-    tidyverse
+    tidyverse (>= 2.0.0)
 Depends: 
-    R (>= 3.10)
+    R (>= 4.0)
 LazyData: true
 Config/testthat/edition: 3
 VignetteBuilder: knitr

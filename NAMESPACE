@@ -3,6 +3,7 @@
 export(draw_from_multivariate_corr)
 export(get_random_structure)
 export(match_with_spiked_wishart)
+export(multi_sample_spiked_wishart)
 export(remove_dependence)
 export(sample_spiked_wishart)
 export(sample_spiked_wishart_and_jac)

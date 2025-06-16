@@ -92,8 +92,8 @@ sample_spiked_wishart <- function(
   return(singular_vals)
 }
 
-#' Compute svd using sparsesvd but return a guaranteed number of singular values
-#' since sparsesvd will truncate whenever an svd happens to small even if we set tol=0
+# Compute svd using sparsesvd but return a guaranteed number of singular values
+# since sparsesvd will truncate whenever an svd happens to small even if we set tol=0
 sparsesvd <- function(mat, rank) {
   udv <- sparsesvd::sparsesvd(mat, rank=rank)
 
@@ -120,7 +120,7 @@ sparsesvd <- function(mat, rank) {
 #' @param num_eigs The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.
 #'
 #' @returns List with a vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
-#'  and also the Jacobian, where [[i,j]] is the derivative of the ith singular value with respect to the jth spiked SD and the
+#'  and also the Jacobian, where `[i,j]` is the derivative of the ith singular value with respect to the jth spiked SD and the
 #'  gradient of the population_sd variable
 #'
 #' @importFrom stats rnorm
@@ -139,7 +139,7 @@ sparsesvd <- function(mat, rank) {
 #'   num_eigs = 3
 #' )
 #' res$singular_vals # singular values of G, (i.e., square roots of the eigenvalues of W = G G^T)
-#' res$jacobian # jacobian of the singular values (sqrt of the first eigenvalue) with respect to each of the spiked_sd's
+#' res$jacobian # jacobian of the singular values with respect to the spiked_sd's
 #' res$pop_sd_grad # gradient of population_sd parameter
 sample_spiked_wishart_and_jac <- function(
     spiked_sd,
@@ -207,12 +207,26 @@ sample_spiked_wishart_and_jac <- function(
 #' @param num_eigs The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.
 #'
 #' @returns List with a vector of mean singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
-#'  and also the mean Jacobian, where [[i,j]] is the derivative of the ith singular value with respect to the jth spiked SD, and the
+#'  and also the mean Jacobian, where `[i,j]` is the derivative of the ith singular value with respect to the jth spiked SD, and the
 #'  gradient of the population_sd parameter
 #'
 #' @importFrom stats rnorm
 #' @importFrom stats rchisq
 #' @export
+#'
+#' @examples
+#' # Sample 10 times from the spiked Wishart distribution with (500, 100, 1, ..., 1) singular values
+#' # and take the means of the singular values as well as derivatives (jacobian and pop_sd_grad)
+#' mean_vals <- multi_sample_spiked_wishart(
+#'     count = 10,
+#'     spiked_sd = c(500, 100),
+#'     num_observations = 10-1,
+#'     num_variables = 1000,
+#'     num_eigs = 3
+#' )
+#' mean_vals$singular_vals
+#' mean_vals$jacobian
+#' mean_vals$pop_sd_grad
 multi_sample_spiked_wishart <- function(
     count,
     spiked_sd,

@@ -211,7 +211,10 @@ marginals_and_transform <- function(datasets, types) {
       marginals[[dataname]] <- list(
         lambda = lambda
       )
-      transformed_data[[dataname]] <- qnorm(ppois(data, lambda))
+      lower <- ppois(data-1e-8, lambda) # Smear out mass to the full range of 0-1 since Poisson is discrete
+      upper <- ppois(data, lambda)
+      p <- matrix(runif(nrow(data)*ncol(data), lower, upper), nrow=nrow(data), ncol=ncol(data))
+      transformed_data[[dataname]] <- qnorm(p)
     } else if (type == "DESeq2") {
       fit <- fit_deseq(data)
       marginals[[dataname]] <- fit$marginals

@@ -120,7 +120,7 @@ sparsesvd <- function(mat, rank) {
 #' @param num_eigs The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.
 #'
 #' @returns List with a vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
-#'  and also the Jacobian, where `[i,j]` is the derivative of the ith singular value with respect to the jth spiked SD and the
+#'  and also the Jacobian, where `\[i,j\]` is the derivative of the ith singular value with respect to the jth spiked SD and the
 #'  gradient of the population_sd variable
 #'
 #' @importFrom stats rnorm
@@ -207,7 +207,7 @@ sample_spiked_wishart_and_jac <- function(
 #' @param num_eigs The number of eigenvalues to compute. If 0 compute all of them using dense matrix routines. If greater than zero, use sparse matrices and compute that many top eigenvalues.
 #'
 #' @returns List with a vector of mean singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
-#'  and also the mean Jacobian, where `[i,j]` is the derivative of the ith singular value with respect to the jth spiked SD, and the
+#'  and also the mean Jacobian, where `\[i,j\]` is the derivative of the ith singular value with respect to the jth spiked SD, and the
 #'  gradient of the population_sd parameter
 #'
 #' @importFrom stats rnorm

@@ -44,7 +44,8 @@ num_observations <- 10-1
 sampled_eigenvalues <- sample_spiked_wishart(true_spiked_sd, num_observations,
       num_variables, num_eigs=2)
 # Fit some spiked SDs that give eigenvalues similar to sampled_eigenvalues
-fit <- match_with_spiked_wishart(sampled_eigenvalues, rank=2, num_observations, num_variables, num_iterations=5, num_samples_per_iter=50)
+fit <- match_with_spiked_wishart(sampled_eigenvalues, rank=2, num_observations, num_variables,
+          num_iterations=5, num_samples_per_iter=50)
 # fit$spiked_sd should now be close to giving the specified sampled_eigenvalues (in expectation)
 # fit$spiked_sd won't match the original true_spiked_sd too closely since it only
 # fits the single sample # that gave  sampled_eigenvalue

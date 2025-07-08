@@ -26,7 +26,7 @@ sample_spiked_wishart_and_jac(
 }
 \value{
 List with a vector of random singular values of G where G is a random num_variables x num_observations matrix with iid columns from N(0, Sigma) where Sigma is diagonal with entries spiked_sd^2 and all the remaining are population_sd^2.
-and also the Jacobian, where [\link{i,j}] is the derivative of the ith singular value with respect to the jth spiked SD and the
+and also the Jacobian, where \verb{\[i,j\]} is the derivative of the ith singular value with respect to the jth spiked SD and the
 gradient of the population_sd variable
 }
 \description{
@@ -45,6 +45,6 @@ res = sample_spiked_wishart_and_jac(
   num_eigs = 3
 )
 res$singular_vals # singular values of G, (i.e., square roots of the eigenvalues of W = G G^T)
-res$jacobian # jacobian of the singular values (sqrt of the first eigenvalue) with respect to each of the spiked_sd's
+res$jacobian # jacobian of the singular values with respect to the spiked_sd's
 res$pop_sd_grad # gradient of population_sd parameter
 }

@@ -4,7 +4,7 @@ Version: 1.0.0.0
 Authors@R: 
     person("Thomas", "Brooks", , "tgbrooks@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-6980-0079"))
-Description: Using a Gaussian copula approach, this package generates simulated data mimicking a target real dataset. It supports normal, Poisson, empirical, and DESeq2 (negative binomial with size factors) marginal distributions. It uses an low-rank plus diagonal covariance matrix to efficiently generate omics-scale data.
+Description: Using a Gaussian copula approach, this package generates simulated data mimicking a target real dataset. It supports normal, Poisson, empirical, and 'DESeq2' (negative binomial with size factors) marginal distributions. It uses an low-rank plus diagonal covariance matrix to efficiently generate omics-scale data. Methods are described in: Yang, Grant, and Brooks (2025) <doi:10.1101/2025.01.31.634335>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

@@ -17,32 +17,25 @@ knitr::opts_chunk$set(
 ## Setup
 
 Install the required dependencies if not already installed:
-```{r}
+```{r eval=FALSE}
 # The simulator
-if (!requireNamespace("remotes", quietly = TRUE))
-    install.packages("remotes")
-if (!requireNamespace("dependentsimr", quietly = TRUE))
-    remotes::install_github("tgbrooks/dependentsimr")
+  install.packages("remotes")
+  remotes::install_github("tgbrooks/dependentsimr")
 
 # DESeq2 - optional dependency only needed if doing RNA-seq data sets
 # Needed for type = "DESeq2"
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-if (!requireNamespace("DESeq2", quietly = TRUE))
-    BiocManager::install("DESeq2")
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
 
 # Two more dependencies that are used in some simulation modes
 # Needed for method = "corpcor"
-if (!requireNamespace("corpcor", quietly = TRUE)) 
-    install.packages("corpcor")
+install.packages("corpcor")
 
 # Needed for method = "spiked Wishart"
-if (!requireNamespace("sparsesvd", quietly = TRUE))
-    install.packages("sparsesvd")
+install.packages("sparsesvd")
 
 # Extras needed for this vignette
-if (!requireNamespace("tidyverse", quietly = TRUE))
-    install.packages("tidyverse")
+install.packages("tidyverse")
 ```
 
 Load the libraries:

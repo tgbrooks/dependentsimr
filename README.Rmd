@@ -44,19 +44,28 @@ This captures cross-mode dependencies observed in the data as well as intra-mode
 
 ## Installation
 
-You can install the development version of dependentsimr from GitHub with:
+The package is available from CRAN:
+
+``` r
+install.packages("dependentsimr")
+```
+
+Alternatively, you can install the latest development version of dependentsimr from GitHub with:
 
 ``` r
 # install.packages("remotes")
 remotes::install_github("tgbrooks/dependentsimr")
 ```
 
-The package is also being submitted to CRAN and will become available as:
-``` r
-install.packages("dependentsimr")
-```
-
 
 ## Vignette
 
 For an extended example of using this package to generate RNA-seq data, please see [this vignette](https://html-preview.github.io/?url=https://github.com/tgbrooks/dependentsimr/blob/main/doc/simulate_data.html).
+
+## Future directions
+
+The methods described in our paper and implemented here are quite general and are computationally efficient for genome-scale datasets.
+The implementation is already largely flexibile enough to fit most omics datasets, however, some additional developments may be needed to scale to new data types.
+For example, single-cell RNA-seq is sometimes modelled by using a zero-inflated negative binomial (ZINB), which is not implemented here.
+Such a modification could be made in the `marginals_and_transform` and `draw_from_multivariate_corr` functions relatively easily, and likewise for any other marginal distributions required.
+Moreover, raw single-cell datasets often have distinct cell-types which means that cell-cell variance is not well captured by the Gaussian copula approach: the solution to this is to separate out cell-types and simulate them separately.

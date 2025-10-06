@@ -3,6 +3,8 @@
 
 # dependentsimr
 
+`dependentsimr` is an R package for simulation of data including correlations between the datapoints. See our [PLOS Comp Bio publication](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1013392).
+
 ## Generating Correlated Data for Omics Simulation
 
 Omics data is in the “p \>\> n” regime where there are fewer samples

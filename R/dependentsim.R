@@ -192,6 +192,7 @@ marginals_and_transform <- function(datasets, types) {
       lower <- ppois(data-1e-8, lambda) # Smear out mass to the full range of 0-1 since Poisson is discrete
       upper <- ppois(data, lambda)
       p <- matrix(runif(nrow(data)*ncol(data), lower, upper), nrow=nrow(data), ncol=ncol(data))
+      z <- poisson_rqr(data, lambda)
       transformed_data[[dataname]] <- qnorm(p)
     } else if (type == "DESeq2") {
       fit <- fit_deseq(data)
@@ -416,13 +417,9 @@ fit_deseq <- function(data) {
 
   # this is a discrete distribution
   # So we 'smear' the probability of each bin out when converting to normal
-  lower <- pnbinom(counts-1, mu = mu, size = 1/disp)
-  lower[is.na(lower)] <- 0.5 # if mu=NA, always give p=0.5
-  upper <- pnbinom(counts, mu = mu, size = 1/disp)
-  upper[is.na(upper)] <- 0.5
-  p <- matrix(runif(nrow(counts)*ncol(counts), lower, upper), nrow=nrow(counts), ncol=ncol(counts))
+  # using randomized quantile residuals.
+  transformed_data <- nb_rqr(counts, mu, disp)
 
-  transformed_data <- qnorm(p)
   # DESeq gives NAs where it can't fit. We replace those with zeros
   transformed_data[is.na(transformed_data)] <- 0
   return(list(
@@ -432,4 +429,99 @@ fit_deseq <- function(data) {
     ),
     transformed_data = transformed_data
   ))
+}
+
+
+#' @keywords internal
+log_add <- function(a, b) {
+    # log(exp(a) + exp(b)), vectorized, safe when one side is -Inf
+    m <- pmax(a, b)
+    d <- -abs(a - b)
+    d[is.na(d)] <- 0 # both -Inf
+    out <- m + log1p(exp(d))
+    out[is.infinite(m) & m < 0] <- -Inf
+    out
+}
+
+#' @keywords internal
+#' @importFrom stats pnbinom
+#' @importFrom stats dnbinom
+#' @importFrom stats runif
+#' @importFrom stats qnorm
+nb_rqr <- function(counts, mu, disp) {
+    # randomized quantile residuals for negative binomial (DESeq2 model)
+    # The naive approach sometimes yields infinites that we can't work with
+    # this splits by low and high tails and works in log space
+    y <- as.vector(counts)
+    m <- as.vector(mu)
+    size <- 1 / as.vector(disp)       # recycles if disp is per-row/col vector of right length
+    if (length(size) != length(y)) {
+        size <- rep_len(size, length(y))
+    }
+    u <- runif(length(y))
+
+    z <- numeric(length(y))
+    bad <- is.na(m) | is.na(size) | is.na(y)
+    low <- !bad & (y <= m) # lower-tail side
+    upp <- !bad & (y >  m) # upper-tail side
+
+    # lower side: p = F(y-1) + U * P(Y=y), z = qnorm(p)
+    if (any(low)) {
+        yl <- y[low]; ml <- m[low]; sl <- size[low]
+        lF  <- pnbinom(yl - 1, mu = ml, size = sl, lower.tail = TRUE, log.p = TRUE)
+        ld  <- dnbinom(yl,     mu = ml, size = sl, log = TRUE)
+        lp  <- log_add(lF, log(u[low]) + ld)
+        z[low] <- qnorm(lp, log.p = TRUE)
+    }
+
+    # upper side: s = S(y) + U * P(Y=y), z = -qnorm(s)
+    if (any(upp)) {
+        yu <- y[upp]; mu_ <- m[upp]; su <- size[upp]
+        lS  <- pnbinom(yu, mu = mu_, size = su, lower.tail = FALSE, log.p = TRUE)
+        ld  <- dnbinom(yu, mu = mu_, size = su, log = TRUE)
+        ls  <- log_add(lS, log(u[upp]) + ld)
+        z[upp] <- qnorm(ls, lower.tail = FALSE, log.p = TRUE)
+    }
+
+    z[bad] <- 0
+    dim(z) <- dim(counts)
+    z
+}
+
+#' @keywords internal
+#' @importFrom stats ppois dpois qnorm runif
+poisson_rqr <- function(counts, lambda) {
+    # randomized quantile residuals for Poisson
+    # The naive approach sometimes yields infinites that we can't work with
+    # this splits by low and high tails and works in log space
+    y <- as.vector(counts)
+    lam <- as.vector(lambda)
+    u <- runif(length(y))
+
+    z <- numeric(length(y))
+    low <- (y <= lam) # lower-tail side
+    upp <- (y >  lam) # upper-tail side
+
+    # lower side: p = F(y-1) + U * P(Y=y), z = qnorm(p)
+    if (any(low)) {
+        yl <- y[low]
+        laml <- lam[low]
+        lF  <- ppois(yl - 1, lambda = laml, lower.tail = TRUE, log.p = TRUE)
+        ld  <- dpois(yl,     lambda = laml, log = TRUE)
+        lp  <- log_add(lF, log(u[low]) + ld)
+        z[low] <- qnorm(lp, log.p = TRUE)
+    }
+
+    # upper side: s = S(y) + U * P(Y=y), z = -qnorm(s)
+    if (any(upp)) {
+        yu <- y[upp]
+        lamu <- lam[upp]
+        lS  <- ppois(yu, lambda = lamu, lower.tail = FALSE, log.p = TRUE)
+        ld  <- dpois(yu, lambda = lamu, log = TRUE)
+        ls  <- log_add(lS, log(u[upp]) + ld)
+        z[upp] <- qnorm(ls, lower.tail = FALSE, log.p = TRUE)
+    }
+
+    dim(z) <- dim(counts)
+    z
 }

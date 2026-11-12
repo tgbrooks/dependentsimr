@@ -190,13 +190,18 @@ sim_data <- simulate_data(marginals_de, dep_pca, new_design=new_design, size_fac
 
 To demonstrate the data, we show a PCA plot of the control and treatment groups.
 ```{r}
-pca <- prcomp(t(sim_data), center=TRUE, scale.=TRUE, rank.=2)
-pca_points <- predict(pca, t(sim_data))
-pca_data <- tibble(x=pca_points[,1], y=pca_points[,2]) |>
+# Drop genes with no variance (e.g., all zero), which can't be scaled
+sim_data_var <- sim_data[apply(sim_data, 1, var) > 0, ]
+pca <- prcomp(t(sim_data_var), center=TRUE, scale.=TRUE, rank.=2)
+pct_var <- 100 * pca$sdev^2 / sum(pca$sdev^2)
+pca_data <- tibble(x=pca$x[,1], y=pca$x[,2]) |>
     mutate(group = c(rep("control", N_SAMPLES), rep("treatment", N_SAMPLES)))
 ggplot(pca_data, aes(x, y, color=group)) +
   geom_point() +
-  labs(x = "PC1", y = "PC2")
+  labs(
+    x = sprintf("PC1 (%.1f%% of variance)", pct_var[1]),
+    y = sprintf("PC2 (%.1f%% of variance)", pct_var[2])
+  )
 ```
 
 As expected, the control and treatment group separate nicely, but there is also a substantial component of variation which both groups have.

@@ -133,3 +133,16 @@ test_that("remove_dependence works on old structures", {
   draws <- suppressWarnings(draw_from_multivariate_corr(rs_indep, n_samples=5))
   expect_equal(dim(draws$data), c(6, 5))
 })
+
+test_that("remove_dependence on an old spiked Wishart structure gives independent draws", {
+  rs <- suppressWarnings(get_random_structure(list(data=norm_data), method="spiked Wishart", rank=2, type="normal"))
+  rs_indep <- remove_dependence(rs)
+  dep <- structure(
+    list(method = "spiked Wishart", n_features = 6, rank = 2, cov = rs_indep$cov,
+         spiked_sd = rs_indep$spiked_sd, population_sd = rs_indep$population_sd),
+    class = "dependentsimr_dependence"
+  )
+  N <- 20000
+  C <- tcrossprod(dependentsimr:::draw_latent(dep, N)) / N
+  expect_equal(C, diag(rs$population_sd^2, 6), tolerance = 0.05)
+})

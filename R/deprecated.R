@@ -169,7 +169,8 @@ remove_dependence <- function(random_structure) {
   if (new_structure$cov_method == "pca") {
     new_structure$pc_factor_sizes <- rep(0, random_structure$rank)
   } else if (new_structure$cov_method == "spiked Wishart") {
-    new_structure$spiked_sd <- rep(0, length(new_structure$spiked_sd))
+    # Spikes the same size as the rest of the population give population_sd^2 * I: no dependence
+    new_structure$spiked_sd <- rep(abs(new_structure$population_sd), length(new_structure$spiked_sd))
   } else if (new_structure$cov_method == "corpcor") {
     new_structure$dep_part <- 0*new_structure$dep_part
     new_structure$indep_part <- rep(1, length(new_structure$indep_part))

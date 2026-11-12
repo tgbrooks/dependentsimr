@@ -254,7 +254,7 @@ test_that("dependence must come from matching marginals", {
 test_that("spiked Wishart draws have the fitted covariance", {
   set.seed(4)
   m <- 60
-  n <- 40
+  n <- 20
   loadings <- cbind(c(rep(2, 20), rep(0, 40)), c(rep(0, 20), rep(1.5, 20), rep(0, 20)))
   data <- matrix(rnorm(m * n), m, n) + loadings %*% matrix(rnorm(2 * n), 2, n)
   marginals <- fit_marginals(data, "normal")
@@ -290,4 +290,38 @@ test_that("spiked Wishart draws have the fitted covariance", {
   dep_neg$population_sd <- -dep$population_sd
   dep_neg$spiked_sd <- -dep$spiked_sd
   check_draws(dep_neg)
+})
+
+test_that("spiked Wishart spikes smaller than the population SD are honored", {
+  set.seed(5)
+  m <- 30
+  U <- qr.Q(qr(matrix(rnorm(m * 2), m, 2)))
+  dep <- structure(
+    list(method = "spiked Wishart", n_features = m, rank = 2, cov = list(u = U),
+         spiked_sd = c(3, 0.3), population_sd = -1.2),
+    class = "dependentsimr_dependence"
+  )
+  N <- 20000
+  C <- tcrossprod(dependentsimr:::draw_latent(dep, N)) / N
+  expect_equal(drop(t(U[, 2]) %*% C %*% U[, 2]), 0.3^2, tolerance = 0.05)
+  expect_equal(drop(t(U[, 1]) %*% C %*% U[, 1]), 3^2, tolerance = 0.05)
+  expect_equal(mean(diag(C)), (3^2 + 0.3^2 + (m - 2) * 1.2^2) / m, tolerance = 0.05)
+})
+
+test_that("spiked Wishart sampler matches direct simulation", {
+  set.seed(6)
+  reps <- 1000
+  # Both more variables than observations and the reverse
+  for (cfg in list(list(p = 60, N = 10), list(p = 10, N = 25))) {
+    spiked <- c(5, 2)
+    pop <- 1.3
+    sds <- c(spiked, rep(pop, cfg$p - 2))
+    ne <- min(cfg$p, cfg$N)
+    direct <- replicate(reps, svd(matrix(rnorm(cfg$p * cfg$N), cfg$p) * sds, nu = 0, nv = 0)$d[1:ne])
+    sampled <- replicate(reps, sample_spiked_wishart(spiked, cfg$N, cfg$p, pop, num_eigs = 0)[1:ne])
+    sampled_jac <- replicate(reps, sample_spiked_wishart_and_jac(spiked, cfg$N, cfg$p, pop, num_eigs = ne)$singular_vals)
+    se <- sqrt(2 * apply(direct, 1, var) / reps)
+    expect_true(all(abs(rowMeans(sampled) - rowMeans(direct)) < 4.5 * se))
+    expect_true(all(abs(rowMeans(sampled_jac) - rowMeans(direct)) < 4.5 * se))
+  }
 })

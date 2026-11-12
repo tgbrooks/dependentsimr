@@ -182,38 +182,38 @@ check_dependence <- function(dependence) {
 draw_latent <- function(dependence, n_samples) {
   m <- dependence$n_features
   method <- dependence$method
-  if (method == "pca" || method == "spiked Wishart") {
+  if (method == "pca") {
     k <- dependence$rank
     pc <- dependence$cov
-    if (method == "pca") {
-      sizes <- dependence$pc_factor_sizes
-    } else {
-      # The spiked Wishart model has covariance
-      #   U diag(spiked_sd^2) U^T + population_sd^2 (I - U U^T)
-      # i.e., variance spiked_sd^2 along the k spiked directions and population_sd^2 in all others.
-      # We draw the population part in every direction (including the spiked ones),
-      # so the spiked components only contribute the variance in excess of that.
-      # Note both are SDs, and the fit may return negative values since the model
-      # only depends on their squares (sign is arbitrary), so we take abs().
-      population_sd <- abs(dependence$population_sd)
-      sizes <- sqrt(pmax(dependence$spiked_sd^2 - population_sd^2, 0))
-    }
 
     # Draw from the multivariate normal distribution with the dependence structure of the pc
     # but done efficiently by transforming to a standard normal
-    sdev <- diag(sizes, nrow = k)
+    sdev <- diag(dependence$pc_factor_sizes, nrow = k)
     pc_draws <- pc$u %*% sdev %*% matrix(rnorm(k * n_samples), k, n_samples)
 
     # Add in the missing variance to match the actual data
     # by drawing independent data with the appropriate variance
-    if (method == "pca") {
-      pc_var <- rowSums((pc$u %*% sdev)^2) # variance we already accounted for
-      missing_var <- pmax(dependence$var - pc_var, 0) # variance left to include as purely independent
-    } else {
-      missing_var <- population_sd^2
-    }
+    pc_var <- rowSums((pc$u %*% sdev)^2) # variance we already accounted for
+    missing_var <- pmax(dependence$var - pc_var, 0) # variance left to include as purely independent
     indep_draws <- matrix(rnorm(m * n_samples, sd = rep(sqrt(missing_var), n_samples)), m, n_samples)
     pc_draws + indep_draws
+  } else if (method == "spiked Wishart") {
+    # The spiked Wishart model has covariance
+    #   U diag(spiked_sd^2) U^T + population_sd^2 (I - U U^T)
+    # i.e., variance spiked_sd^2 along the k spiked directions (columns of U) and
+    # population_sd^2 in the m-k dimensional space orthogonal to them.
+    # Both are SDs. The fit may return negative values since the model only depends on
+    # their squares (the sign is arbitrary), so we take abs().
+    k <- dependence$rank
+    U <- dependence$cov$u
+    spiked_sd <- abs(dependence$spiked_sd)
+    population_sd <- abs(dependence$population_sd)
+
+    spiked_draws <- U %*% (spiked_sd * matrix(rnorm(k * n_samples), k, n_samples))
+    # Isotropic noise projected onto the orthogonal complement of U
+    noise <- matrix(rnorm(m * n_samples), m, n_samples)
+    noise <- noise - U %*% crossprod(U, noise)
+    spiked_draws + population_sd * noise
   } else if (method == "corpcor") {
     k <- ncol(dependence$dep_part)
     dep_draws <- dependence$dep_part %*% matrix(rnorm(k * n_samples), k, n_samples)

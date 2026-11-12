@@ -56,7 +56,9 @@ sample_spiked_wishart <- function(
     rep(population_sd, last_row - k)
   )
 
-  main_diagonal = sd[1:last_col] * sqrt(rchisq(n=last_col, df = seq(last_col, 1, -1)))
+  # Row j of the reduced matrix holds the norm of its remaining num_observations-j+1 columns
+  # (after rotating away the earlier columns), so it is chi distributed with that many df
+  main_diagonal = sd[1:last_col] * sqrt(rchisq(n=last_col, df = seq(num_observations, num_observations - last_col + 1, -1)))
 
   middle_diag_offsets = seq(from=1, length.out=k-1)
   middle_diagonals = lapply(middle_diag_offsets, function(i) {
@@ -164,7 +166,9 @@ sample_spiked_wishart_and_jac <- function(
     rep(population_sd, last_row - k)
   )
 
-  main_diagonal = sqrt(rchisq(n=last_col, df = seq(last_col, 1, -1)))
+  # Row j of the reduced matrix holds the norm of its remaining num_observations-j+1 columns
+  # (after rotating away the earlier columns), so it is chi distributed with that many df
+  main_diagonal = sqrt(rchisq(n=last_col, df = seq(num_observations, num_observations - last_col + 1, -1)))
 
   middle_diag_offsets = seq(from=1, length.out=k-1)
   middle_diagonals = lapply(middle_diag_offsets, function(i) {

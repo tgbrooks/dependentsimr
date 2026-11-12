@@ -19,19 +19,18 @@ knitr::opts_chunk$set(
 Install the required dependencies if not already installed:
 ```{r eval=FALSE}
 # The simulator
-  install.packages("remotes")
-  remotes::install_github("tgbrooks/dependentsimr")
+install.packages("dependentsimr")
 
 # DESeq2 - optional dependency only needed if doing RNA-seq data sets
-# Needed for type = "DESeq2"
+# Needed for method = "DESeq2" in fit_marginals()
 install.packages("BiocManager")
 BiocManager::install("DESeq2")
 
 # Two more dependencies that are used in some simulation modes
-# Needed for method = "corpcor"
+# Needed for method = "corpcor" in fit_dependence()
 install.packages("corpcor")
 
-# Needed for method = "spiked Wishart"
+# Needed for method = "spiked Wishart" in fit_dependence()
 install.packages("sparsesvd")
 
 # Extras needed for this vignette
@@ -41,7 +40,7 @@ install.packages("tidyverse")
 Load the libraries:
 ```{r}
 library(dependentsimr)
-suppressWarnings(suppressMessages(library(tidyverse, DESeq2)))
+suppressWarnings(suppressMessages(library(tidyverse)))
 ```
 
 Set a seed for reproducibility.
@@ -49,69 +48,83 @@ Set a seed for reproducibility.
 set.seed(0)
 ```
 
+## Overview
+
+A simulation has three steps:
+
+1. `fit_marginals()` fits the distribution of each feature (gene) individually, optionally accounting for known sample covariates.
+2. `fit_dependence()` estimates the dependence between features from the residuals of that fit.
+3. `simulate_data()` draws new samples with those marginal distributions and that dependence.
+
+The first step is the slowest (particularly for RNA-seq, which uses DESeq2), so it can be run once and reused with different dependence methods or modified to add differential expression.
+
 ## Load data
 
 Simulations with `dependentsimr` start with a real data set that should be mimicked.
 This data can be almost any shape, including continuous, or discrete.
 Here, we will simulate RNA-seq, which has discrete counts that we handle with a special "DESeq2" model.
-Other data types can use normal, Poisson, or empirical (which uses only the values present in the data set) types, or even a combination of these.
+Other data types can use normal, Poisson, or empirical (which uses only the values present in the data set) marginal distributions, or even a combination of these.
 
 We will use the following data set, which is a trimmed-down RNA-seq data of 1000 genes on 12 samples, originating from GSE151923.
 
 ```{r}
 head(read_counts)
 ```
-We first just format it as a matrix for use with `dependentsimr` instead of as a tibble.
+
+The data has genes in rows and samples in columns.
+It can be given directly to `dependentsimr` as a data frame with gene names in the first column, or as a numeric matrix.
+
+## Fit the marginal distributions
+
+First we fit the marginal distribution of each gene.
+For RNA-seq, `method = "DESeq2"` uses a negative binomial model with sample-specific size factors (to account for read depth), as in DESeq2.
 
 ```{r}
-count_matrix <- as.matrix(read_counts[,2:ncol(read_counts)])
-rownames(count_matrix) <- read_counts$gene_id
+marginals <- fit_marginals(read_counts, method="DESeq2")
+marginals
 ```
 
-## Get Dependence Structure
+## Fit the dependence
 
-The first step is to compute a 'random structure' for the data, which encodes how the variables (genes, in this case) in the data set are dependent upon each other.
+Next, we compute how the genes are dependent upon each other.
 This computes a covariance matrix which captures the dependence between genes, however, that matrix is not the same as the usual sample covariance matrix.
-It also computes the shape (such as mean and variance) of each variable individually.
 
-There are three implemented methods ("pca", "spiked Wishart", and "corpcor") with different characteristics.
-We demonstrate here each.
+There are three implemented methods ("pca", "spiked Wishart", and "corpcor") with different characteristics, plus "independent" for comparison.
+Since the marginals are already fit, trying each of these is fast.
 
 First, the "pca" method takes a `rank` and includes only gene-gene dependence up to that many dimensions.
 Typically small values (2 or 3, for example) would be used for `rank`, similar to when performing PCA, unless a large number of input samples are available.
-Note that we put our `read_counts` data into a `list()`.
-This is done since `get_random_structure` also supports multiple data sets of different 'modes' (for example, proteomics and transcriptomics done on the same samples).
-We only have one 'mode' that we give the arbitrary name of `data`.
 ```{r}
-rs_pca <- get_random_structure(list(data=count_matrix), method="pca", rank=2, types="DESeq2")
+dep_pca <- fit_dependence(marginals, method="pca", rank=2)
 ```
 
 Second, the spiked Wishart method also takes a `rank` value but uses it differently.
 Typically, this will be larger, up to the total number of samples minus one, which is what we use here.
 For very large sample counts, `rank` might need to be capped well below the number of samples for computational efficiency reasons.
 ```{r}
-rs_wishart <- get_random_structure(list(data=count_matrix), rank=11, method="spiked Wishart", types="DESeq2")
+dep_wishart <- fit_dependence(marginals, method="spiked Wishart", rank=11)
 ```
 
 Third, a method based off the `corpcor` package is implemented.
 It takes no parameters but often underestimates the amount of gene-gene dependence in the data.
 ```{r}
-rs_corpcor <- get_random_structure(list(data=count_matrix), method="corpcor", types="DESeq2")
+dep_corpcor <- fit_dependence(marginals, method="corpcor")
 ```
 
-Lastly, we could generate data without gene-gene dependence for comparison by removing the dependence from any of our random structures.
+Lastly, we could generate data without gene-gene dependence for comparison.
 ```{r}
-rs_indep <- remove_dependence(rs_pca)
+dep_indep <- fit_dependence(marginals, method="independent")
 ```
 
 ## Generate Data
 
 Real RNA-seq data sets typically have variation between samples in the total number of reads per sample.
 Here, we just copy the total number of reads from the real data set to get realistic values.
-A `library_size` of 1 corresponds to the average read depth of the data used to generate the random structure.
-This step is only needed when generating RNA-seq data with `type = "DESeq2"`.
+A size factor of 1 corresponds to the average read depth of the data used to fit the marginals.
+This step is only needed when generating RNA-seq data with `method = "DESeq2"`.
 
 ```{r}
+count_matrix <- as.matrix(read_counts[,-1])
 actual_library_sizes <- count_matrix |> apply(2, sum)
 
 N_SAMPLES <- 6
@@ -121,64 +134,168 @@ library_sizes <- sample(actual_library_sizes / mean(actual_library_sizes), size=
 ### Simulate Control Data
 
 Now we generate some 'control' samples, which have the same expression levels (as well as gene-gene dependence) as was estimated from the original data set.
-We'll use `rs_pca` that we generated above for example, but any of the methods could be used.
+We'll use `dep_pca` that we generated above for example, but any of the methods could be used.
 Each column is a separate simulated sample.
 Samples are independent of each other in this model, however genes within a sample are dependent upon each other.
 ```{r}
-control_sim_data <- draw_from_multivariate_corr(rs_pca, n_samples=N_SAMPLES, size_factors=library_sizes)$data
+control_sim_data <- simulate_data(marginals, dep_pca, n_samples=N_SAMPLES, size_factors=library_sizes)
+dim(control_sim_data)
 ```
-Note that we used `$data` here because that was the name we provided to `get_random_structure` and it was the only mode of data that we had.
-If multiple modes were used to generate the random structure, then we `draw_from_multivariate_corr` returns a list with each of them.
+
+If multiple datasets (for example, proteomics and transcriptomics on the same samples) were given to `fit_marginals()` as a named list, then `simulate_data()` returns a list with each of them.
 
 ### Simulate Differentially Expressed Data
 
-To generate a set of 'treatment' samples which differ from the 'control' samples, we will have to modify the random structure to reflect the desired expression values of the treatment group.
-We do this by just choosing some genes at random and picking a fold-change for each at random.
+To generate a set of 'treatment' samples which differ from the 'control' samples, we choose which genes are differentially expressed (DE) and by how much.
 
 ```{r}
 # fraction of all genes to modify in treatment
-FRAC_DE <- 0.1
+FRAC_DE <- 0.02
 # Min and max value for the log fold change (LFC) for each DE gene chosen
 # non-DE genes will have a LFC of 0
 LFC_MIN <- 0.5
-LFC_MAX <- 4.0
+LFC_MAX <- 2.0
 N_DE <- floor(FRAC_DE * nrow(control_sim_data))
 
 # Pick which genes are DE
-de_genes <- sample(nrow(control_sim_data), N_DE)
+de_genes <- sample(rownames(control_sim_data), N_DE)
 
 # Pick the LFCs of each of those genes
 de_lfc <- runif(N_DE, LFC_MIN, LFC_MAX) * sample(c(-1, 1), size=N_DE, replace=TRUE)
+names(de_lfc) <- de_genes
 ```
 
-Now, we create a new random structure object and modify it to have the desired expression values.
-Information about the marginal distribution of each gene (e.g., mean and variance but not dependence on other genes) is stored in `rs$marginals` for a random structure `rs`.
-The specifics depend upon the `type` used in `get_random_structure`, but for `DESeq2`, the `q` value determines the mean expression, so we change that here.
+Now, we add a 'treatment' effect to the marginals with these log2 fold changes.
+All genes not named in `de_lfc` get no effect.
+For DESeq2 marginals, effects are log2 fold changes; for Poisson they are natural-log fold changes and for normal they are additive shifts.
 
 ```{r}
-rs_treatment <- rs_pca
-rs_treatment$marginals$data$q[de_genes] <- 2^(de_lfc) * rs_treatment$marginals$data$q[de_genes]
+marginals_de <- add_effect(marginals, "treatment", de_lfc)
+marginals_de
 ```
 
-Lastly, we generate the data for the 'treatment' samples.
+The simulated samples are then specified by a `new_design` matrix, with one row per sample and a column for each coefficient: the intercept and our new treatment effect.
+Here, we simulate both groups at once, with new library sizes drawn for each of the samples.
+The dependence fit from the original marginals can be reused as-is, since the dependence does not depend on the coefficients.
+This time we use the spiked Wishart dependence, `dep_wishart`.
+
 ```{r}
-treatment_sim_data <- draw_from_multivariate_corr(rs_treatment, n_samples=N_SAMPLES, size_factors=library_sizes)$data
+new_design <- cbind(
+  "(Intercept)" = 1,
+  treatment = rep(c(0, 1), each=N_SAMPLES)
+)
+library_sizes_de <- sample(actual_library_sizes / mean(actual_library_sizes), size=2*N_SAMPLES, replace=TRUE)
+sim_data <- simulate_data(marginals_de, dep_wishart, new_design=new_design, size_factors=library_sizes_de)
 ```
 
 ## Plot the generated data
 
 To demonstrate the data, we show a PCA plot of the control and treatment groups.
-```{r}
-sim_data <- cbind(control_sim_data, treatment_sim_data)
-pca <- prcomp(t(sim_data), center=TRUE, scale.=TRUE, rank.=2)
-pca_points <- predict(pca, t(sim_data))
-pca_data <- tibble(x=pca_points[,1], y=pca_points[,2]) |>
-    mutate(group = c(rep("control", N_SAMPLES), rep("treatment", N_SAMPLES)))
+For comparison, we also simulate the same design from `dep_indep`, which has no gene-gene dependence.
+Before the PCA, we normalize the counts to log counts per million (log-CPM), as is usual for RNA-seq.
+Otherwise, the differences in library size between samples dominate the PCA.
+
+```{r, fig.width=7, fig.height=3.5}
+sim_data_indep <- simulate_data(marginals_de, dep_indep, new_design=new_design, size_factors=library_sizes_de)
+
+log_cpm <- function(counts) {
+  log2(t(t(counts) / colSums(counts)) * 1e6 + 1)
+}
+
+pca_points <- function(counts, label) {
+  x <- log_cpm(counts)
+  x <- x[apply(x, 1, var) > 0, ] # drop genes with no variance (e.g., all zero), which can't be scaled
+  pca <- prcomp(t(x), center=TRUE, scale.=TRUE)
+  pct_var <- 100 * pca$sdev^2 / sum(pca$sdev^2)
+  tibble(
+    x = pca$x[,1],
+    y = pca$x[,2],
+    group = c(rep("control", N_SAMPLES), rep("treatment", N_SAMPLES)),
+    simulation = sprintf("%s\nPC1: %.1f%%, PC2: %.1f%% of variance", label, pct_var[1], pct_var[2])
+  )
+}
+
+pca_data <- bind_rows(
+  pca_points(sim_data, "With dependence (spiked Wishart)"),
+  pca_points(sim_data_indep, "Independent")
+) |>
+  mutate(simulation = fct_inorder(simulation))
 ggplot(pca_data, aes(x, y, color=group)) +
   geom_point() +
+  facet_wrap(~simulation, scales="free") +
   labs(x = "PC1", y = "PC2")
 ```
 
-As expected, the control and treatment group separate nicely, but there is also a substantial component of variation (PC1) which both groups have.
-This arises from the dependence between genes, which is the same in both groups in our simulation.
+Without gene-gene dependence, the treatment effect is the main structure in the data, so the groups separate along the top principal components.
+With dependence, the top principal components explain more of the variance.
+That extra variation comes from the dependence between genes, which is shared by both groups in our simulation, and it can be as large as the treatment effect itself, so the groups need not separate cleanly in the first two components.
 
+## Accounting for known covariates
+
+So far, we have assumed that all of the original samples are identically distributed.
+Often, there is known structure in the samples, such as treatment groups, batches, or covariates like age.
+Without accounting for it, that structure will look like dependence between genes: all genes affected by the group will appear correlated.
+Instead, we can give `fit_marginals()` a design matrix so that each gene's distribution depends on the covariates, and the dependence is estimated from what remains.
+
+The sample names in our data indicate that the mice come from two cohorts:
+```{r}
+samples <- tibble(sample = colnames(read_counts)[-1]) |>
+  mutate(cohort = factor(str_extract(sample, "^[^_]+")))
+table(samples$cohort)
+```
+
+We construct a design matrix with `model.matrix()`, with rows in the same order as the samples (columns) in the data.
+
+```{r}
+design <- model.matrix(~ cohort, samples)
+marginals_cohort <- fit_marginals(read_counts, method="DESeq2", design=design)
+dep_cohort <- fit_dependence(marginals_cohort, method="pca", rank=2)
+```
+
+Since a design was given, `simulate_data()` now requires a `new_design` with the same columns, which specifies the covariates of each simulated sample.
+For example, to simulate 6 mice from each cohort:
+```{r}
+new_samples <- tibble(cohort = factor(rep(c("Arpp19", "Dach1"), each=6), levels=levels(samples$cohort)))
+new_design <- model.matrix(~ cohort, new_samples)
+sim_cohort <- simulate_data(marginals_cohort, dep_cohort, new_design=new_design)
+```
+
+Or to simulate only mice like the first (reference) cohort, use a `new_design` where every other column is zero.
+Note that this is not the same as an all-ones intercept column if the design had no intercept.
+
+Be careful with simulating from the fit coefficients of real groups, as we did above.
+The estimated difference between groups includes estimation noise, so every gene will have some estimated effect even if, in truth, most genes are not different.
+Simulating from these estimates therefore gives more differential expression than really exists in the original data.
+To simulate differential expression with a known truth, choose the effects explicitly instead, as in the previous section, and use `add_effect()` with `overwrite = TRUE` to replace an estimated coefficient:
+```{r}
+marginals_cohort_de <- add_effect(marginals_cohort, "cohortDach1", de_lfc, overwrite=TRUE)
+sim_cohort_de <- simulate_data(marginals_cohort_de, dep_cohort, new_design=new_design)
+```
+
+### Constructing a matching new_design
+
+`simulate_data()` checks that `new_design` has the same column names as the coefficients, and that factor contrasts match, but it cannot check everything.
+Some terms are encoded in a way that depends on the data itself, so building `new_design` from a formula separately would silently encode them differently.
+The most common case is splines, whose knots are chosen from the data, and similarly `poly()` and `scale()`.
+
+For example, suppose our samples had an age covariate that we model with a spline.
+(These ages are made up for illustration.)
+```{r}
+samples$age <- runif(nrow(samples), 10, 30)
+model <- model.frame(~ cohort + splines::ns(age, df=3), samples)
+design_age <- model.matrix(model, samples)
+marginals_age <- fit_marginals(read_counts, method="DESeq2", design=design_age)
+dep_age <- fit_dependence(marginals_age, method="pca", rank=2)
+```
+
+To build the `new_design`, use the terms of the original model frame, which remember the knots:
+```{r}
+new_samples <- tibble(
+  cohort = factor("Arpp19", levels=levels(samples$cohort)),
+  age = c(12, 16, 20, 24, 28)
+)
+new_design_age <- model.matrix(delete.response(terms(model)), new_samples)
+sim_age <- simulate_data(marginals_age, dep_age, new_design=new_design_age)
+```
+
+Do not instead use `model.matrix(~ cohort + splines::ns(age, df=3), new_samples)`: that would place the knots based on the new ages and give a matrix with the same column names but a different meaning.

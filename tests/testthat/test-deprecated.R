@@ -1,3 +1,4 @@
+# Tests of the deprecated v1 interface
 set.seed(0)
 ## MULTIVARIATE NORMAL DATA ------------------------------------
 # Generate the example MV normal data
@@ -13,8 +14,8 @@ true_Sigma = matrix(c(
 norm_data <- t(mvrnorm(n=20, mu=c(0,0,0,0,0,0), Sigma=true_Sigma))
 
 # Simulate draws mimicking that data
-rs_normal <- get_random_structure(list(data=norm_data), method="pca", rank=2, type="normal")
-draws_normal <- draw_from_multivariate_corr(rs_normal, n_samples=30)
+rs_normal <- suppressWarnings(get_random_structure(list(data=norm_data), method="pca", rank=2, type="normal"))
+draws_normal <- suppressWarnings(draw_from_multivariate_corr(rs_normal, n_samples=30))
 
 test_that("normal draws work", {
   expect_equal(dim(draws_normal$data), c(6,30))
@@ -39,8 +40,8 @@ test_that("pc size factors are accurate", {
 pois_data <- qpois(pnorm(norm_data), lambda = c(50, 1000, 2, 10, 0.2, 0.5))
 
 # Simulate draws mimicking that data
-rs_poisson <- get_random_structure(list(data=pois_data), method="pca", rank=1, type="poisson")
-draws_poisson <- draw_from_multivariate_corr(rs_poisson, n_samples=30)
+rs_poisson <- suppressWarnings(get_random_structure(list(data=pois_data), method="pca", rank=1, type="poisson"))
+draws_poisson <- suppressWarnings(draw_from_multivariate_corr(rs_poisson, n_samples=30))
 
 test_that("poisson draws work", {
   expect_equal(dim(draws_poisson$data), c(6,30))
@@ -74,8 +75,8 @@ d <- c(
 read_counts <- matrix(d, nrow=20, ncol=9, byrow=TRUE)
 
 # Simulate draws mimicking that data
-rs_deseq <- get_random_structure(list(data=read_counts), method="pca", rank=2, type="DESeq2")
-draws_deseq <- draw_from_multivariate_corr(rs_deseq, n_samples=30)
+rs_deseq <- suppressWarnings(get_random_structure(list(data=read_counts), method="pca", rank=2, type="DESeq2"))
+draws_deseq <- suppressWarnings(draw_from_multivariate_corr(rs_deseq, n_samples=30))
 
 test_that("DESeq2 draws work", {
   expect_equal(dim(draws_deseq$data), c(20,30))
@@ -85,8 +86,8 @@ test_that("DESeq2 draws work", {
 
 ## Empirical fit --------------------------------------------------------
 # Using the same as the DESeq2 data
-rs_emp <- get_random_structure(list(data=read_counts), method="pca", rank=2, type="empirical")
-draws_emp <- draw_from_multivariate_corr(rs_emp, n_samples=30)
+rs_emp <- suppressWarnings(get_random_structure(list(data=read_counts), method="pca", rank=2, type="empirical"))
+draws_emp <- suppressWarnings(draw_from_multivariate_corr(rs_emp, n_samples=30))
 
 test_that("empirical draws work", {
   expect_equal(dim(draws_emp$data), c(20,30))
@@ -106,10 +107,42 @@ types <- list(
   pois = "poisson"
 )
 
-rs_multi <- get_random_structure(datasets, method="pca", rank=2, types=types)
-draws_multi <- draw_from_multivariate_corr(rs_multi, n_samples=10)
+rs_multi <- suppressWarnings(get_random_structure(datasets, method="pca", rank=2, types=types))
+draws_multi <- suppressWarnings(draw_from_multivariate_corr(rs_multi, n_samples=10))
 
 test_that("multiple datasets works", {
   expect_equal(dim(draws_multi$norm), c(6,10))
   expect_equal(dim(draws_multi$pois), c(6,10))
+})
+
+test_that("old interface gives deprecation warnings", {
+  expect_warning(get_random_structure(list(data=norm_data), method="pca", rank=2, type="normal"), "deprecated")
+  expect_warning(draw_from_multivariate_corr(rs_normal, n_samples=3), "deprecated")
+})
+
+test_that("modifying old-style marginals still affects draws", {
+  rs_mod <- rs_deseq
+  rs_mod$marginals$data$q[1] <- 1e6 * rs_mod$marginals$data$q[1]
+  draws <- suppressWarnings(draw_from_multivariate_corr(rs_mod, n_samples=10))$data
+  expect_true(all(draws[1,] > 1e8))
+})
+
+test_that("remove_dependence works on old structures", {
+  rs_indep <- remove_dependence(rs_normal)
+  expect_equal(rs_indep$pc_factor_sizes, c(0, 0))
+  draws <- suppressWarnings(draw_from_multivariate_corr(rs_indep, n_samples=5))
+  expect_equal(dim(draws$data), c(6, 5))
+})
+
+test_that("remove_dependence on an old spiked Wishart structure gives independent draws", {
+  rs <- suppressWarnings(get_random_structure(list(data=norm_data), method="spiked Wishart", rank=2, type="normal"))
+  rs_indep <- remove_dependence(rs)
+  dep <- structure(
+    list(method = "spiked Wishart", n_features = 6, rank = 2, cov = rs_indep$cov,
+         spiked_sd = rs_indep$spiked_sd, population_sd = rs_indep$population_sd),
+    class = "dependentsimr_dependence"
+  )
+  N <- 20000
+  C <- tcrossprod(dependentsimr:::draw_latent(dep, N)) / N
+  expect_equal(C, diag(rs$population_sd^2, 6), tolerance = 0.05)
 })

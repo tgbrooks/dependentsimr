@@ -60,7 +60,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -344,28 +344,43 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h2>Setup</h2>
 <p>Install the required dependencies if not already installed:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># The simulator</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="fu">install.packages</span>(<span class="st">&quot;remotes&quot;</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;tgbrooks/dependentsimr&quot;</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># DESeq2 - optional dependency only needed if doing RNA-seq data sets</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># Needed for type = &quot;DESeq2&quot;</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">&quot;DESeq2&quot;</span>)</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># Two more dependencies that are used in some simulation modes</span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co"># Needed for method = &quot;corpcor&quot;</span></span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;corpcor&quot;</span>)</span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co"># Needed for method = &quot;spiked Wishart&quot;</span></span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;sparsesvd&quot;</span>)</span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co"># Extras needed for this vignette</span></span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;tidyverse&quot;</span>)</span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;dependentsimr&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># DESeq2 - optional dependency only needed if doing RNA-seq data sets</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># Needed for method = &quot;DESeq2&quot; in fit_marginals()</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">&quot;DESeq2&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co"># Two more dependencies that are used in some simulation modes</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># Needed for method = &quot;corpcor&quot; in fit_dependence()</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;corpcor&quot;</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co"># Needed for method = &quot;spiked Wishart&quot; in fit_dependence()</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;sparsesvd&quot;</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co"># Extras needed for this vignette</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;tidyverse&quot;</span>)</span></code></pre></div>
 <p>Load the libraries:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(dependentsimr)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">suppressWarnings</span>(<span class="fu">suppressMessages</span>(<span class="fu">library</span>(tidyverse, DESeq2)))</span></code></pre></div>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">suppressWarnings</span>(<span class="fu">suppressMessages</span>(<span class="fu">library</span>(tidyverse)))</span></code></pre></div>
 <p>Set a seed for reproducibility.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">0</span>)</span></code></pre></div>
+</div>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>A simulation has three steps:</p>
+<ol style="list-style-type: decimal">
+<li><code>fit_marginals()</code> fits the distribution of each feature
+(gene) individually, optionally accounting for known sample
+covariates.</li>
+<li><code>fit_dependence()</code> estimates the dependence between
+features from the residuals of that fit.</li>
+<li><code>simulate_data()</code> draws new samples with those marginal
+distributions and that dependence.</li>
+</ol>
+<p>The first step is the slowest (particularly for RNA-seq, which uses
+DESeq2), so it can be run once and reused with different dependence
+methods or modified to add differential expression.</p>
 </div>
 <div id="load-data" class="section level2">
 <h2>Load data</h2>
@@ -374,165 +389,260 @@ set that should be mimicked. This data can be almost any shape,
 including continuous, or discrete. Here, we will simulate RNA-seq, which
 has discrete counts that we handle with a special “DESeq2” model. Other
 data types can use normal, Poisson, or empirical (which uses only the
-values present in the data set) types, or even a combination of
-these.</p>
+values present in the data set) marginal distributions, or even a
+combination of these.</p>
 <p>We will use the following data set, which is a trimmed-down RNA-seq
 data of 1000 genes on 12 samples, originating from GSE151923.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">head</span>(read_counts)</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 13</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 x 13</span></span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;   gene_id     Arpp19_10_3 Arpp19_4_1 Arpp19_5_1 Arpp19_5_3 Arpp19_5_4 Arpp19_6_1</span></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; 1 ENSMUSG000…        2377       2162       2169       2650       2217       2552</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 2 ENSMUSG000…         908        799        730        941        761        780</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; 3 ENSMUSG000…         316        342        373        373        325        405</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; 4 ENSMUSG000…         584        650        466        687        551        606</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 5 ENSMUSG000…        2739       2531       2594       2988       2614       3081</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; 6 ENSMUSG000…         807        753        746        894        806        819</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; # ℹ 6 more variables: Arpp19_7_2 &lt;dbl&gt;, Arpp19_9_1 &lt;dbl&gt;, Dach1_11_1 &lt;dbl&gt;,</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; 1 ENSMUSG000~        2377       2162       2169       2650       2217       2552</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 2 ENSMUSG000~         908        799        730        941        761        780</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; 3 ENSMUSG000~         316        342        373        373        325        405</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; 4 ENSMUSG000~         584        650        466        687        551        606</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 5 ENSMUSG000~        2739       2531       2594       2988       2614       3081</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; 6 ENSMUSG000~         807        753        746        894        806        819</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; # i 6 more variables: Arpp19_7_2 &lt;dbl&gt;, Arpp19_9_1 &lt;dbl&gt;, Dach1_11_1 &lt;dbl&gt;,</span></span>
 <span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; #   Dach1_2_2 &lt;dbl&gt;, Dach1_3_1 &lt;dbl&gt;, Dach1_5_3 &lt;dbl&gt;</span></span></code></pre></div>
-<p>We first just format it as a matrix for use with
-<code>dependentsimr</code> instead of as a tibble.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>count_matrix <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(read_counts[,<span class="dv">2</span><span class="sc">:</span><span class="fu">ncol</span>(read_counts)])</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">rownames</span>(count_matrix) <span class="ot">&lt;-</span> read_counts<span class="sc">$</span>gene_id</span></code></pre></div>
+<p>The data has genes in rows and samples in columns. It can be given
+directly to <code>dependentsimr</code> as a data frame with gene names
+in the first column, or as a numeric matrix.</p>
 </div>
-<div id="get-dependence-structure" class="section level2">
-<h2>Get Dependence Structure</h2>
-<p>The first step is to compute a ‘random structure’ for the data, which
-encodes how the variables (genes, in this case) in the data set are
-dependent upon each other. This computes a covariance matrix which
-captures the dependence between genes, however, that matrix is not the
-same as the usual sample covariance matrix. It also computes the shape
-(such as mean and variance) of each variable individually.</p>
+<div id="fit-the-marginal-distributions" class="section level2">
+<h2>Fit the marginal distributions</h2>
+<p>First we fit the marginal distribution of each gene. For RNA-seq,
+<code>method = &quot;DESeq2&quot;</code> uses a negative binomial model with
+sample-specific size factors (to account for read depth), as in
+DESeq2.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>marginals <span class="ot">&lt;-</span> <span class="fu">fit_marginals</span>(read_counts, <span class="at">method=</span><span class="st">&quot;DESeq2&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>marginals</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; dependentsimr marginals: 12 samples</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   data: 1000 features, method &#39;DESeq2&#39;</span></span></code></pre></div>
+</div>
+<div id="fit-the-dependence" class="section level2">
+<h2>Fit the dependence</h2>
+<p>Next, we compute how the genes are dependent upon each other. This
+computes a covariance matrix which captures the dependence between
+genes, however, that matrix is not the same as the usual sample
+covariance matrix.</p>
 <p>There are three implemented methods (“pca”, “spiked Wishart”, and
-“corpcor”) with different characteristics. We demonstrate here each.</p>
+“corpcor”) with different characteristics, plus “independent” for
+comparison. Since the marginals are already fit, trying each of these is
+fast.</p>
 <p>First, the “pca” method takes a <code>rank</code> and includes only
 gene-gene dependence up to that many dimensions. Typically small values
 (2 or 3, for example) would be used for <code>rank</code>, similar to
 when performing PCA, unless a large number of input samples are
-available. Note that we put our <code>read_counts</code> data into a
-<code>list()</code>. This is done since
-<code>get_random_structure</code> also supports multiple data sets of
-different ‘modes’ (for example, proteomics and transcriptomics done on
-the same samples). We only have one ‘mode’ that we give the arbitrary
-name of <code>data</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>rs_pca <span class="ot">&lt;-</span> <span class="fu">get_random_structure</span>(<span class="fu">list</span>(<span class="at">data=</span>count_matrix), <span class="at">method=</span><span class="st">&quot;pca&quot;</span>, <span class="at">rank=</span><span class="dv">2</span>, <span class="at">types=</span><span class="st">&quot;DESeq2&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; converting counts to integer mode</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; estimating size factors</span></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; estimating dispersions</span></span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; gene-wise dispersion estimates</span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; mean-dispersion relationship</span></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; final dispersion estimates</span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; fitting model and testing</span></span></code></pre></div>
+available.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>dep_pca <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals, <span class="at">method=</span><span class="st">&quot;pca&quot;</span>, <span class="at">rank=</span><span class="dv">2</span>)</span></code></pre></div>
 <p>Second, the spiked Wishart method also takes a <code>rank</code>
 value but uses it differently. Typically, this will be larger, up to the
 total number of samples minus one, which is what we use here. For very
 large sample counts, <code>rank</code> might need to be capped well
 below the number of samples for computational efficiency reasons.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>rs_wishart <span class="ot">&lt;-</span> <span class="fu">get_random_structure</span>(<span class="fu">list</span>(<span class="at">data=</span>count_matrix), <span class="at">rank=</span><span class="dv">11</span>, <span class="at">method=</span><span class="st">&quot;spiked Wishart&quot;</span>, <span class="at">types=</span><span class="st">&quot;DESeq2&quot;</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; converting counts to integer mode</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; estimating size factors</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; estimating dispersions</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; gene-wise dispersion estimates</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; mean-dispersion relationship</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; final dispersion estimates</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; fitting model and testing</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>dep_wishart <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals, <span class="at">method=</span><span class="st">&quot;spiked Wishart&quot;</span>, <span class="at">rank=</span><span class="dv">11</span>)</span></code></pre></div>
 <p>Third, a method based off the <code>corpcor</code> package is
 implemented. It takes no parameters but often underestimates the amount
 of gene-gene dependence in the data.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>rs_corpcor <span class="ot">&lt;-</span> <span class="fu">get_random_structure</span>(<span class="fu">list</span>(<span class="at">data=</span>count_matrix), <span class="at">method=</span><span class="st">&quot;corpcor&quot;</span>, <span class="at">types=</span><span class="st">&quot;DESeq2&quot;</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; converting counts to integer mode</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; estimating size factors</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; estimating dispersions</span></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; gene-wise dispersion estimates</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; mean-dispersion relationship</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; final dispersion estimates</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; fitting model and testing</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; Estimating optimal shrinkage intensity lambda (correlation matrix): 0.7601 </span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; Estimating optimal shrinkage intensity lambda.var (variance vector): 1</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>dep_corpcor <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals, <span class="at">method=</span><span class="st">&quot;corpcor&quot;</span>)</span></code></pre></div>
 <p>Lastly, we could generate data without gene-gene dependence for
-comparison by removing the dependence from any of our random
-structures.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>rs_indep <span class="ot">&lt;-</span> <span class="fu">remove_dependence</span>(rs_pca)</span></code></pre></div>
+comparison.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>dep_indep <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals, <span class="at">method=</span><span class="st">&quot;independent&quot;</span>)</span></code></pre></div>
 </div>
 <div id="generate-data" class="section level2">
 <h2>Generate Data</h2>
 <p>Real RNA-seq data sets typically have variation between samples in
 the total number of reads per sample. Here, we just copy the total
-number of reads from the real data set to get realistic values. A
-<code>library_size</code> of 1 corresponds to the average read depth of
-the data used to generate the random structure. This step is only needed
-when generating RNA-seq data with <code>type = &quot;DESeq2&quot;</code>.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>actual_library_sizes <span class="ot">&lt;-</span> count_matrix <span class="sc">|&gt;</span> <span class="fu">apply</span>(<span class="dv">2</span>, sum)</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>N_SAMPLES <span class="ot">&lt;-</span> <span class="dv">6</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>library_sizes <span class="ot">&lt;-</span> <span class="fu">sample</span>(actual_library_sizes <span class="sc">/</span> <span class="fu">mean</span>(actual_library_sizes), <span class="at">size=</span>N_SAMPLES, <span class="at">replace=</span><span class="cn">TRUE</span>)</span></code></pre></div>
+number of reads from the real data set to get realistic values. A size
+factor of 1 corresponds to the average read depth of the data used to
+fit the marginals. This step is only needed when generating RNA-seq data
+with <code>method = &quot;DESeq2&quot;</code>.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>count_matrix <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(read_counts[,<span class="sc">-</span><span class="dv">1</span>])</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>actual_library_sizes <span class="ot">&lt;-</span> count_matrix <span class="sc">|&gt;</span> <span class="fu">apply</span>(<span class="dv">2</span>, sum)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>N_SAMPLES <span class="ot">&lt;-</span> <span class="dv">6</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>library_sizes <span class="ot">&lt;-</span> <span class="fu">sample</span>(actual_library_sizes <span class="sc">/</span> <span class="fu">mean</span>(actual_library_sizes), <span class="at">size=</span>N_SAMPLES, <span class="at">replace=</span><span class="cn">TRUE</span>)</span></code></pre></div>
 <div id="simulate-control-data" class="section level3">
 <h3>Simulate Control Data</h3>
 <p>Now we generate some ‘control’ samples, which have the same
 expression levels (as well as gene-gene dependence) as was estimated
-from the original data set. We’ll use <code>rs_pca</code> that we
+from the original data set. We’ll use <code>dep_pca</code> that we
 generated above for example, but any of the methods could be used. Each
 column is a separate simulated sample. Samples are independent of each
 other in this model, however genes within a sample are dependent upon
 each other.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>control_sim_data <span class="ot">&lt;-</span> <span class="fu">draw_from_multivariate_corr</span>(rs_pca, <span class="at">n_samples=</span>N_SAMPLES, <span class="at">size_factors=</span>library_sizes)<span class="sc">$</span>data</span></code></pre></div>
-<p>Note that we used <code>$data</code> here because that was the name
-we provided to <code>get_random_structure</code> and it was the only
-mode of data that we had. If multiple modes were used to generate the
-random structure, then we <code>draw_from_multivariate_corr</code>
-returns a list with each of them.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>control_sim_data <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals, dep_pca, <span class="at">n_samples=</span>N_SAMPLES, <span class="at">size_factors=</span>library_sizes)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">dim</span>(control_sim_data)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; [1] 1000    6</span></span></code></pre></div>
+<p>If multiple datasets (for example, proteomics and transcriptomics on
+the same samples) were given to <code>fit_marginals()</code> as a named
+list, then <code>simulate_data()</code> returns a list with each of
+them.</p>
 </div>
 <div id="simulate-differentially-expressed-data" class="section level3">
 <h3>Simulate Differentially Expressed Data</h3>
 <p>To generate a set of ‘treatment’ samples which differ from the
-‘control’ samples, we will have to modify the random structure to
-reflect the desired expression values of the treatment group. We do this
-by just choosing some genes at random and picking a fold-change for each
-at random.</p>
+‘control’ samples, we choose which genes are differentially expressed
+(DE) and by how much.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># fraction of all genes to modify in treatment</span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>FRAC_DE <span class="ot">&lt;-</span> <span class="fl">0.1</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>FRAC_DE <span class="ot">&lt;-</span> <span class="fl">0.02</span></span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co"># Min and max value for the log fold change (LFC) for each DE gene chosen</span></span>
 <span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co"># non-DE genes will have a LFC of 0</span></span>
 <span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>LFC_MIN <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>LFC_MAX <span class="ot">&lt;-</span> <span class="fl">4.0</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>LFC_MAX <span class="ot">&lt;-</span> <span class="fl">2.0</span></span>
 <span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>N_DE <span class="ot">&lt;-</span> <span class="fu">floor</span>(FRAC_DE <span class="sc">*</span> <span class="fu">nrow</span>(control_sim_data))</span>
 <span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a></span>
 <span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co"># Pick which genes are DE</span></span>
-<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>de_genes <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">nrow</span>(control_sim_data), N_DE)</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>de_genes <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">rownames</span>(control_sim_data), N_DE)</span>
 <span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a></span>
 <span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co"># Pick the LFCs of each of those genes</span></span>
-<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>de_lfc <span class="ot">&lt;-</span> <span class="fu">runif</span>(N_DE, LFC_MIN, LFC_MAX) <span class="sc">*</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">size=</span>N_DE, <span class="at">replace=</span><span class="cn">TRUE</span>)</span></code></pre></div>
-<p>Now, we create a new random structure object and modify it to have
-the desired expression values. Information about the marginal
-distribution of each gene (e.g., mean and variance but not dependence on
-other genes) is stored in <code>rs$marginals</code> for a random
-structure <code>rs</code>. The specifics depend upon the
-<code>type</code> used in <code>get_random_structure</code>, but for
-<code>DESeq2</code>, the <code>q</code> value determines the mean
-expression, so we change that here.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>rs_treatment <span class="ot">&lt;-</span> rs_pca</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>rs_treatment<span class="sc">$</span>marginals<span class="sc">$</span>data<span class="sc">$</span>q[de_genes] <span class="ot">&lt;-</span> <span class="dv">2</span><span class="sc">^</span>(de_lfc) <span class="sc">*</span> rs_treatment<span class="sc">$</span>marginals<span class="sc">$</span>data<span class="sc">$</span>q[de_genes]</span></code></pre></div>
-<p>Lastly, we generate the data for the ‘treatment’ samples.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>treatment_sim_data <span class="ot">&lt;-</span> <span class="fu">draw_from_multivariate_corr</span>(rs_treatment, <span class="at">n_samples=</span>N_SAMPLES, <span class="at">size_factors=</span>library_sizes)<span class="sc">$</span>data</span></code></pre></div>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>de_lfc <span class="ot">&lt;-</span> <span class="fu">runif</span>(N_DE, LFC_MIN, LFC_MAX) <span class="sc">*</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">size=</span>N_DE, <span class="at">replace=</span><span class="cn">TRUE</span>)</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="fu">names</span>(de_lfc) <span class="ot">&lt;-</span> de_genes</span></code></pre></div>
+<p>Now, we add a ‘treatment’ effect to the marginals with these log2
+fold changes. All genes not named in <code>de_lfc</code> get no effect.
+For DESeq2 marginals, effects are log2 fold changes; for Poisson they
+are natural-log fold changes and for normal they are additive
+shifts.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>marginals_de <span class="ot">&lt;-</span> <span class="fu">add_effect</span>(marginals, <span class="st">&quot;treatment&quot;</span>, de_lfc)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>marginals_de</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; dependentsimr marginals: 12 samples</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt;   data: 1000 features, method &#39;DESeq2&#39;</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;   new_design columns required: (Intercept), treatment</span></span></code></pre></div>
+<p>The simulated samples are then specified by a <code>new_design</code>
+matrix, with one row per sample and a column for each coefficient: the
+intercept and our new treatment effect. Here, we simulate both groups at
+once, with new library sizes drawn for each of the samples. The
+dependence fit from the original marginals can be reused as-is, since
+the dependence does not depend on the coefficients. This time we use the
+spiked Wishart dependence, <code>dep_wishart</code>.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>new_design <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="st">&quot;(Intercept)&quot;</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">treatment =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">each=</span>N_SAMPLES)</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>)</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>library_sizes_de <span class="ot">&lt;-</span> <span class="fu">sample</span>(actual_library_sizes <span class="sc">/</span> <span class="fu">mean</span>(actual_library_sizes), <span class="at">size=</span><span class="dv">2</span><span class="sc">*</span>N_SAMPLES, <span class="at">replace=</span><span class="cn">TRUE</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>sim_data <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals_de, dep_wishart, <span class="at">new_design=</span>new_design, <span class="at">size_factors=</span>library_sizes_de)</span></code></pre></div>
 </div>
 </div>
 <div id="plot-the-generated-data" class="section level2">
 <h2>Plot the generated data</h2>
 <p>To demonstrate the data, we show a PCA plot of the control and
-treatment groups.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>sim_data <span class="ot">&lt;-</span> <span class="fu">cbind</span>(control_sim_data, treatment_sim_data)</span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(<span class="fu">t</span>(sim_data), <span class="at">center=</span><span class="cn">TRUE</span>, <span class="at">scale.=</span><span class="cn">TRUE</span>, <span class="at">rank.=</span><span class="dv">2</span>)</span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>pca_points <span class="ot">&lt;-</span> <span class="fu">predict</span>(pca, <span class="fu">t</span>(sim_data))</span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>pca_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">x=</span>pca_points[,<span class="dv">1</span>], <span class="at">y=</span>pca_points[,<span class="dv">2</span>]) <span class="sc">|&gt;</span></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">group =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">&quot;control&quot;</span>, N_SAMPLES), <span class="fu">rep</span>(<span class="st">&quot;treatment&quot;</span>, N_SAMPLES)))</span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="fu">ggplot</span>(pca_data, <span class="fu">aes</span>(x, y, <span class="at">color=</span>group)) <span class="sc">+</span></span>
-<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;PC1&quot;</span>, <span class="at">y =</span> <span class="st">&quot;PC2&quot;</span>)</span></code></pre></div>
-<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
-<p>As expected, the control and treatment group separate nicely, but
-there is also a substantial component of variation (PC1) which both
-groups have. This arises from the dependence between genes, which is the
-same in both groups in our simulation.</p>
+treatment groups. For comparison, we also simulate the same design from
+<code>dep_indep</code>, which has no gene-gene dependence. Before the
+PCA, we normalize the counts to log counts per million (log-CPM), as is
+usual for RNA-seq. Otherwise, the differences in library size between
+samples dominate the PCA.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>sim_data_indep <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals_de, dep_indep, <span class="at">new_design=</span>new_design, <span class="at">size_factors=</span>library_sizes_de)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>log_cpm <span class="ot">&lt;-</span> <span class="cf">function</span>(counts) {</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="fu">log2</span>(<span class="fu">t</span>(<span class="fu">t</span>(counts) <span class="sc">/</span> <span class="fu">colSums</span>(counts)) <span class="sc">*</span> <span class="fl">1e6</span> <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>}</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>pca_points <span class="ot">&lt;-</span> <span class="cf">function</span>(counts, label) {</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">log_cpm</span>(counts)</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>  x <span class="ot">&lt;-</span> x[<span class="fu">apply</span>(x, <span class="dv">1</span>, var) <span class="sc">&gt;</span> <span class="dv">0</span>, ] <span class="co"># drop genes with no variance (e.g., all zero), which can&#39;t be scaled</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>  pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(<span class="fu">t</span>(x), <span class="at">center=</span><span class="cn">TRUE</span>, <span class="at">scale.=</span><span class="cn">TRUE</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>  pct_var <span class="ot">&lt;-</span> <span class="dv">100</span> <span class="sc">*</span> pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> <span class="fu">sum</span>(pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>    <span class="at">x =</span> pca<span class="sc">$</span>x[,<span class="dv">1</span>],</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>    <span class="at">y =</span> pca<span class="sc">$</span>x[,<span class="dv">2</span>],</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>    <span class="at">group =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">&quot;control&quot;</span>, N_SAMPLES), <span class="fu">rep</span>(<span class="st">&quot;treatment&quot;</span>, N_SAMPLES)),</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>    <span class="at">simulation =</span> <span class="fu">sprintf</span>(<span class="st">&quot;%s</span><span class="sc">\n</span><span class="st">PC1: %.1f%%, PC2: %.1f%% of variance&quot;</span>, label, pct_var[<span class="dv">1</span>], pct_var[<span class="dv">2</span>])</span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a>  )</span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a>}</span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a>pca_data <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a>  <span class="fu">pca_points</span>(sim_data, <span class="st">&quot;With dependence (spiked Wishart)&quot;</span>),</span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a>  <span class="fu">pca_points</span>(sim_data_indep, <span class="st">&quot;Independent&quot;</span>)</span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">simulation =</span> <span class="fu">fct_inorder</span>(simulation))</span>
+<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a><span class="fu">ggplot</span>(pca_data, <span class="fu">aes</span>(x, y, <span class="at">color=</span>group)) <span class="sc">+</span></span>
+<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>simulation, <span class="at">scales=</span><span class="st">&quot;free&quot;</span>) <span class="sc">+</span></span>
+<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;PC1&quot;</span>, <span class="at">y =</span> <span class="st">&quot;PC2&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>Without gene-gene dependence, the treatment effect is the main
+structure in the data, so the groups separate along the top principal
+components. With dependence, the top principal components explain more
+of the variance. That extra variation comes from the dependence between
+genes, which is shared by both groups in our simulation, and it can be
+as large as the treatment effect itself, so the groups need not separate
+cleanly in the first two components.</p>
+</div>
+<div id="accounting-for-known-covariates" class="section level2">
+<h2>Accounting for known covariates</h2>
+<p>So far, we have assumed that all of the original samples are
+identically distributed. Often, there is known structure in the samples,
+such as treatment groups, batches, or covariates like age. Without
+accounting for it, that structure will look like dependence between
+genes: all genes affected by the group will appear correlated. Instead,
+we can give <code>fit_marginals()</code> a design matrix so that each
+gene’s distribution depends on the covariates, and the dependence is
+estimated from what remains.</p>
+<p>The sample names in our data indicate that the mice come from two
+cohorts:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>samples <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">sample =</span> <span class="fu">colnames</span>(read_counts)[<span class="sc">-</span><span class="dv">1</span>]) <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">cohort =</span> <span class="fu">factor</span>(<span class="fu">str_extract</span>(sample, <span class="st">&quot;^[^_]+&quot;</span>)))</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="fu">table</span>(samples<span class="sc">$</span>cohort)</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; Arpp19  Dach1 </span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt;      8      4</span></span></code></pre></div>
+<p>We construct a design matrix with <code>model.matrix()</code>, with
+rows in the same order as the samples (columns) in the data.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>design <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> cohort, samples)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>marginals_cohort <span class="ot">&lt;-</span> <span class="fu">fit_marginals</span>(read_counts, <span class="at">method=</span><span class="st">&quot;DESeq2&quot;</span>, <span class="at">design=</span>design)</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>dep_cohort <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals_cohort, <span class="at">method=</span><span class="st">&quot;pca&quot;</span>, <span class="at">rank=</span><span class="dv">2</span>)</span></code></pre></div>
+<p>Since a design was given, <code>simulate_data()</code> now requires a
+<code>new_design</code> with the same columns, which specifies the
+covariates of each simulated sample. For example, to simulate 6 mice
+from each cohort:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>new_samples <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">cohort =</span> <span class="fu">factor</span>(<span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;Arpp19&quot;</span>, <span class="st">&quot;Dach1&quot;</span>), <span class="at">each=</span><span class="dv">6</span>), <span class="at">levels=</span><span class="fu">levels</span>(samples<span class="sc">$</span>cohort)))</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>new_design <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> cohort, new_samples)</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>sim_cohort <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals_cohort, dep_cohort, <span class="at">new_design=</span>new_design)</span></code></pre></div>
+<p>Or to simulate only mice like the first (reference) cohort, use a
+<code>new_design</code> where every other column is zero. Note that this
+is not the same as an all-ones intercept column if the design had no
+intercept.</p>
+<p>Be careful with simulating from the fit coefficients of real groups,
+as we did above. The estimated difference between groups includes
+estimation noise, so every gene will have some estimated effect even if,
+in truth, most genes are not different. Simulating from these estimates
+therefore gives more differential expression than really exists in the
+original data. To simulate differential expression with a known truth,
+choose the effects explicitly instead, as in the previous section, and
+use <code>add_effect()</code> with <code>overwrite = TRUE</code> to
+replace an estimated coefficient:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>marginals_cohort_de <span class="ot">&lt;-</span> <span class="fu">add_effect</span>(marginals_cohort, <span class="st">&quot;cohortDach1&quot;</span>, de_lfc, <span class="at">overwrite=</span><span class="cn">TRUE</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>sim_cohort_de <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals_cohort_de, dep_cohort, <span class="at">new_design=</span>new_design)</span></code></pre></div>
+<div id="constructing-a-matching-new_design" class="section level3">
+<h3>Constructing a matching new_design</h3>
+<p><code>simulate_data()</code> checks that <code>new_design</code> has
+the same column names as the coefficients, and that factor contrasts
+match, but it cannot check everything. Some terms are encoded in a way
+that depends on the data itself, so building <code>new_design</code>
+from a formula separately would silently encode them differently. The
+most common case is splines, whose knots are chosen from the data, and
+similarly <code>poly()</code> and <code>scale()</code>.</p>
+<p>For example, suppose our samples had an age covariate that we model
+with a spline. (These ages are made up for illustration.)</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>samples<span class="sc">$</span>age <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="fu">nrow</span>(samples), <span class="dv">10</span>, <span class="dv">30</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">model.frame</span>(<span class="sc">~</span> cohort <span class="sc">+</span> splines<span class="sc">::</span><span class="fu">ns</span>(age, <span class="at">df=</span><span class="dv">3</span>), samples)</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>design_age <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(model, samples)</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>marginals_age <span class="ot">&lt;-</span> <span class="fu">fit_marginals</span>(read_counts, <span class="at">method=</span><span class="st">&quot;DESeq2&quot;</span>, <span class="at">design=</span>design_age)</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>dep_age <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals_age, <span class="at">method=</span><span class="st">&quot;pca&quot;</span>, <span class="at">rank=</span><span class="dv">2</span>)</span></code></pre></div>
+<p>To build the <code>new_design</code>, use the terms of the original
+model frame, which remember the knots:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>new_samples <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>  <span class="at">cohort =</span> <span class="fu">factor</span>(<span class="st">&quot;Arpp19&quot;</span>, <span class="at">levels=</span><span class="fu">levels</span>(samples<span class="sc">$</span>cohort)),</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>  <span class="at">age =</span> <span class="fu">c</span>(<span class="dv">12</span>, <span class="dv">16</span>, <span class="dv">20</span>, <span class="dv">24</span>, <span class="dv">28</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>)</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>new_design_age <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="fu">delete.response</span>(<span class="fu">terms</span>(model)), new_samples)</span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>sim_age <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals_age, dep_age, <span class="at">new_design=</span>new_design_age)</span></code></pre></div>
+<p>Do not instead use
+<code>model.matrix(~ cohort + splines::ns(age, df=3), new_samples)</code>:
+that would place the knots based on the new ages and give a matrix with
+the same column names but a different meaning.</p>
+</div>
 </div>
 
 

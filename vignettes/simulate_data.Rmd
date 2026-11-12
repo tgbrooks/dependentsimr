@@ -150,11 +150,11 @@ To generate a set of 'treatment' samples which differ from the 'control' samples
 
 ```{r}
 # fraction of all genes to modify in treatment
-FRAC_DE <- 0.1
+FRAC_DE <- 0.02
 # Min and max value for the log fold change (LFC) for each DE gene chosen
 # non-DE genes will have a LFC of 0
 LFC_MIN <- 0.5
-LFC_MAX <- 4.0
+LFC_MAX <- 2.0
 N_DE <- floor(FRAC_DE * nrow(control_sim_data))
 
 # Pick which genes are DE
@@ -175,7 +175,7 @@ marginals_de
 ```
 
 The simulated samples are then specified by a `new_design` matrix, with one row per sample and a column for each coefficient: the intercept and our new treatment effect.
-Here, we simulate both groups at once.
+Here, we simulate both groups at once, with new library sizes drawn for each of the samples.
 The dependence fit from the original marginals can be reused as-is, since the dependence does not depend on the coefficients.
 
 ```{r}
@@ -183,29 +183,51 @@ new_design <- cbind(
   "(Intercept)" = 1,
   treatment = rep(c(0, 1), each=N_SAMPLES)
 )
-sim_data <- simulate_data(marginals_de, dep_pca, new_design=new_design, size_factors=c(library_sizes, library_sizes))
+library_sizes_de <- sample(actual_library_sizes / mean(actual_library_sizes), size=2*N_SAMPLES, replace=TRUE)
+sim_data <- simulate_data(marginals_de, dep_pca, new_design=new_design, size_factors=library_sizes_de)
 ```
 
 ## Plot the generated data
 
 To demonstrate the data, we show a PCA plot of the control and treatment groups.
-```{r}
-# Drop genes with no variance (e.g., all zero), which can't be scaled
-sim_data_var <- sim_data[apply(sim_data, 1, var) > 0, ]
-pca <- prcomp(t(sim_data_var), center=TRUE, scale.=TRUE, rank.=2)
-pct_var <- 100 * pca$sdev^2 / sum(pca$sdev^2)
-pca_data <- tibble(x=pca$x[,1], y=pca$x[,2]) |>
-    mutate(group = c(rep("control", N_SAMPLES), rep("treatment", N_SAMPLES)))
+For comparison, we also simulate the same design from `dep_indep`, which has no gene-gene dependence.
+Before the PCA, we normalize the counts to log counts per million (log-CPM), as is usual for RNA-seq.
+Otherwise, the differences in library size between samples dominate the PCA.
+
+```{r, fig.width=7, fig.height=3.5}
+sim_data_indep <- simulate_data(marginals_de, dep_indep, new_design=new_design, size_factors=library_sizes_de)
+
+log_cpm <- function(counts) {
+  log2(t(t(counts) / colSums(counts)) * 1e6 + 1)
+}
+
+pca_points <- function(counts, label) {
+  x <- log_cpm(counts)
+  x <- x[apply(x, 1, var) > 0, ] # drop genes with no variance (e.g., all zero), which can't be scaled
+  pca <- prcomp(t(x), center=TRUE, scale.=TRUE)
+  pct_var <- 100 * pca$sdev^2 / sum(pca$sdev^2)
+  tibble(
+    x = pca$x[,1],
+    y = pca$x[,2],
+    group = c(rep("control", N_SAMPLES), rep("treatment", N_SAMPLES)),
+    simulation = sprintf("%s\nPC1: %.1f%%, PC2: %.1f%% of variance", label, pct_var[1], pct_var[2])
+  )
+}
+
+pca_data <- bind_rows(
+  pca_points(sim_data, "With dependence (pca)"),
+  pca_points(sim_data_indep, "Independent")
+) |>
+  mutate(simulation = fct_inorder(simulation))
 ggplot(pca_data, aes(x, y, color=group)) +
   geom_point() +
-  labs(
-    x = sprintf("PC1 (%.1f%% of variance)", pct_var[1]),
-    y = sprintf("PC2 (%.1f%% of variance)", pct_var[2])
-  )
+  facet_wrap(~simulation, scales="free") +
+  labs(x = "PC1", y = "PC2")
 ```
 
-As expected, the control and treatment group separate nicely, but there is also a substantial component of variation which both groups have.
-This arises from the dependence between genes, which is the same in both groups in our simulation.
+Without gene-gene dependence, the treatment effect is the main structure in the data, so the groups separate along the top principal components.
+With dependence, the top principal components explain much more of the variance.
+That extra variation comes from the dependence between genes, which is shared by both groups in our simulation, and it can be as large as the treatment effect itself, so the groups need not separate cleanly in the first two components.
 
 ## Accounting for known covariates
 

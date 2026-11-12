@@ -250,3 +250,44 @@ test_that("dependence must come from matching marginals", {
   m2 <- fit_marginals(counts, "DESeq2")
   expect_error(simulate_data(m1, fit_dependence(m2, "pca"), n_samples = 3), "not fit from these")
 })
+
+test_that("spiked Wishart draws have the fitted covariance", {
+  set.seed(4)
+  m <- 60
+  n <- 40
+  loadings <- cbind(c(rep(2, 20), rep(0, 40)), c(rep(0, 20), rep(1.5, 20), rep(0, 20)))
+  data <- matrix(rnorm(m * n), m, n) + loadings %*% matrix(rnorm(2 * n), 2, n)
+  marginals <- fit_marginals(data, "normal")
+  dep <- fit_dependence(marginals, "spiked Wishart", rank = 2)
+
+  U <- dep$cov$u
+  s2 <- dep$population_sd^2
+  spiked2 <- dep$spiked_sd^2
+  expect_true(all(spiked2 > s2))
+  # Model covariance: spiked_sd^2 along U and population_sd^2 in all orthogonal directions
+  model_cov <- U %*% diag(spiked2) %*% t(U) + s2 * (diag(m) - U %*% t(U))
+
+  check_draws <- function(dependence) {
+    N <- 20000
+    Z <- dependentsimr:::draw_latent(dependence, N)
+    C <- tcrossprod(Z) / N
+    # Variance along each spiked direction
+    for (k in 1:2) {
+      expect_equal(drop(t(U[, k]) %*% C %*% U[, k]), spiked2[k], tolerance = 0.05)
+    }
+    # Variance in a direction orthogonal to the spikes
+    w <- rnorm(m)
+    w <- w - U %*% (t(U) %*% w)
+    w <- w / sqrt(sum(w^2))
+    expect_equal(drop(t(w) %*% C %*% w), s2, tolerance = 0.05)
+    # Per-feature variances
+    expect_equal(diag(C), diag(model_cov), tolerance = 0.05)
+  }
+  check_draws(dep)
+
+  # The fit only determines the SDs up to sign, so negative values must give the same draws
+  dep_neg <- dep
+  dep_neg$population_sd <- -dep$population_sd
+  dep_neg$spiked_sd <- -dep$spiked_sd
+  check_draws(dep_neg)
+})

@@ -185,7 +185,19 @@ draw_latent <- function(dependence, n_samples) {
   if (method == "pca" || method == "spiked Wishart") {
     k <- dependence$rank
     pc <- dependence$cov
-    sizes <- if (method == "pca") dependence$pc_factor_sizes else dependence$spiked_sd
+    if (method == "pca") {
+      sizes <- dependence$pc_factor_sizes
+    } else {
+      # The spiked Wishart model has covariance
+      #   U diag(spiked_sd^2) U^T + population_sd^2 (I - U U^T)
+      # i.e., variance spiked_sd^2 along the k spiked directions and population_sd^2 in all others.
+      # We draw the population part in every direction (including the spiked ones),
+      # so the spiked components only contribute the variance in excess of that.
+      # Note both are SDs, and the fit may return negative values since the model
+      # only depends on their squares (sign is arbitrary), so we take abs().
+      population_sd <- abs(dependence$population_sd)
+      sizes <- sqrt(pmax(dependence$spiked_sd^2 - population_sd^2, 0))
+    }
 
     # Draw from the multivariate normal distribution with the dependence structure of the pc
     # but done efficiently by transforming to a standard normal
@@ -198,7 +210,7 @@ draw_latent <- function(dependence, n_samples) {
       pc_var <- rowSums((pc$u %*% sdev)^2) # variance we already accounted for
       missing_var <- pmax(dependence$var - pc_var, 0) # variance left to include as purely independent
     } else {
-      missing_var <- abs(dependence$population_sd)
+      missing_var <- population_sd^2
     }
     indep_draws <- matrix(rnorm(m * n_samples, sd = rep(sqrt(missing_var), n_samples)), m, n_samples)
     pc_draws + indep_draws

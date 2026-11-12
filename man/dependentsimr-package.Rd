@@ -6,7 +6,7 @@
 \alias{dependentsimr-package}
 \title{dependentsimr: Simulate Omics-Scale Data with Dependency}
 \description{
-Using a Gaussian copula approach, this package generates simulated data mimicking a target real dataset. It supports normal, Poisson, empirical, and 'DESeq2' (negative binomial with size factors) marginal distributions. It uses an low-rank plus diagonal covariance matrix to efficiently generate omics-scale data. Methods are described in: Yang, Grant, and Brooks (2025) \doi{10.1101/2025.01.31.634335}.
+Using a Gaussian copula approach, this package generates simulated data mimicking a target real dataset. It supports normal, Poisson, empirical, and 'DESeq2' (negative binomial with size factors) marginal distributions. Marginal distributions may depend on known sample covariates through a design matrix, with the dependence estimated from the residuals. It uses a low-rank plus diagonal covariance matrix to efficiently generate omics-scale data. Methods are described in: Yang, Grant, and Brooks (2025) \doi{10.1101/2025.01.31.634335}.
 }
 \author{
 \strong{Maintainer}: Thomas Brooks \email{tgbrooks@gmail.com} (\href{https://orcid.org/0000-0002-6980-0079}{ORCID}) [copyright holder]

@@ -177,6 +177,7 @@ marginals_de
 The simulated samples are then specified by a `new_design` matrix, with one row per sample and a column for each coefficient: the intercept and our new treatment effect.
 Here, we simulate both groups at once, with new library sizes drawn for each of the samples.
 The dependence fit from the original marginals can be reused as-is, since the dependence does not depend on the coefficients.
+This time we use the spiked Wishart dependence, `dep_wishart`.
 
 ```{r}
 new_design <- cbind(
@@ -184,7 +185,7 @@ new_design <- cbind(
   treatment = rep(c(0, 1), each=N_SAMPLES)
 )
 library_sizes_de <- sample(actual_library_sizes / mean(actual_library_sizes), size=2*N_SAMPLES, replace=TRUE)
-sim_data <- simulate_data(marginals_de, dep_pca, new_design=new_design, size_factors=library_sizes_de)
+sim_data <- simulate_data(marginals_de, dep_wishart, new_design=new_design, size_factors=library_sizes_de)
 ```
 
 ## Plot the generated data
@@ -215,7 +216,7 @@ pca_points <- function(counts, label) {
 }
 
 pca_data <- bind_rows(
-  pca_points(sim_data, "With dependence (pca)"),
+  pca_points(sim_data, "With dependence (spiked Wishart)"),
   pca_points(sim_data_indep, "Independent")
 ) |>
   mutate(simulation = fct_inorder(simulation))
@@ -226,7 +227,7 @@ ggplot(pca_data, aes(x, y, color=group)) +
 ```
 
 Without gene-gene dependence, the treatment effect is the main structure in the data, so the groups separate along the top principal components.
-With dependence, the top principal components explain much more of the variance.
+With dependence, the top principal components explain more of the variance.
 That extra variation comes from the dependence between genes, which is shared by both groups in our simulation, and it can be as large as the treatment effect itself, so the groups need not separate cleanly in the first two components.
 
 ## Accounting for known covariates

@@ -3,8 +3,6 @@
 
 # dependentsimr
 
-`dependentsimr` is an R package for simulation of data including correlations between the datapoints. See our [PLOS Comp Bio publication](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1013392).
-
 ## Generating Correlated Data for Omics Simulation
 
 Omics data is in the “p \>\> n” regime where there are fewer samples
@@ -35,10 +33,21 @@ negative binomial distribution is fast and simple:
 ``` r
 library(dependentsimr)
 head(read_counts) # An RNA-seq dataset
-rs <- get_random_structure(list(counts=as.matrix(read_counts[,-1])), method="pca", rank=2, type="DESeq2")
-simulated_data <- draw_from_multivariate_corr(rs, n_samples=5)$counts
+marginals <- fit_marginals(read_counts, method="DESeq2")
+dependence <- fit_dependence(marginals, method="pca", rank=2)
+simulated_data <- simulate_data(marginals, dependence, n_samples=5)
 head(simulated_data)
 ```
+
+Fitting the marginal distributions (here with DESeq2) is the slowest
+step, so the result can be reused to try several dependence methods
+(`"pca"`, `"spiked Wishart"`, `"corpcor"`, or `"independent"`).
+
+If the samples have known structure, such as treatment groups or
+batches, pass a `design` matrix to `fit_marginals()` so that the
+dependence is estimated after accounting for it, and a `new_design` for
+the simulated samples to `simulate_data()`. Differential expression can
+be added to a simulation with `add_effect()`; see the vignette.
 
 Finally, this also supports simultaneously generating multiple ‘modes’
 of data, such as happens in multi-omics, where each node can have a
@@ -77,9 +86,9 @@ datasets, however, some additional developments may be needed to scale
 to new data types. For example, single-cell RNA-seq is sometimes
 modelled by using a zero-inflated negative binomial (ZINB), which is not
 implemented here. Such a modification could be made in the
-`marginals_and_transform` and `draw_from_multivariate_corr` functions
-relatively easily, and likewise for any other marginal distributions
-required. Moreover, raw single-cell datasets often have distinct
-cell-types which means that cell-cell variance is not well captured by
-the Gaussian copula approach: the solution to this is to separate out
-cell-types and simulate them separately.
+`fit_marginals` and `simulate_data` functions relatively easily, and
+likewise for any other marginal distributions required. Moreover, raw
+single-cell datasets often have distinct cell-types which means that
+cell-cell variance is not well captured by the Gaussian copula approach:
+the solution to this is to separate out cell-types and simulate them
+separately.

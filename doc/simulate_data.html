@@ -60,7 +60,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -344,28 +344,43 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h2>Setup</h2>
 <p>Install the required dependencies if not already installed:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># The simulator</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="fu">install.packages</span>(<span class="st">&quot;remotes&quot;</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;tgbrooks/dependentsimr&quot;</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># DESeq2 - optional dependency only needed if doing RNA-seq data sets</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># Needed for type = &quot;DESeq2&quot;</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">&quot;DESeq2&quot;</span>)</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># Two more dependencies that are used in some simulation modes</span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co"># Needed for method = &quot;corpcor&quot;</span></span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;corpcor&quot;</span>)</span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co"># Needed for method = &quot;spiked Wishart&quot;</span></span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;sparsesvd&quot;</span>)</span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co"># Extras needed for this vignette</span></span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;tidyverse&quot;</span>)</span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;dependentsimr&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># DESeq2 - optional dependency only needed if doing RNA-seq data sets</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># Needed for method = &quot;DESeq2&quot; in fit_marginals()</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">&quot;DESeq2&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co"># Two more dependencies that are used in some simulation modes</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># Needed for method = &quot;corpcor&quot; in fit_dependence()</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;corpcor&quot;</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co"># Needed for method = &quot;spiked Wishart&quot; in fit_dependence()</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;sparsesvd&quot;</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co"># Extras needed for this vignette</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;tidyverse&quot;</span>)</span></code></pre></div>
 <p>Load the libraries:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(dependentsimr)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">suppressWarnings</span>(<span class="fu">suppressMessages</span>(<span class="fu">library</span>(tidyverse, DESeq2)))</span></code></pre></div>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">suppressWarnings</span>(<span class="fu">suppressMessages</span>(<span class="fu">library</span>(tidyverse)))</span></code></pre></div>
 <p>Set a seed for reproducibility.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">0</span>)</span></code></pre></div>
+</div>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>A simulation has three steps:</p>
+<ol style="list-style-type: decimal">
+<li><code>fit_marginals()</code> fits the distribution of each feature
+(gene) individually, optionally accounting for known sample
+covariates.</li>
+<li><code>fit_dependence()</code> estimates the dependence between
+features from the residuals of that fit.</li>
+<li><code>simulate_data()</code> draws new samples with those marginal
+distributions and that dependence.</li>
+</ol>
+<p>The first step is the slowest (particularly for RNA-seq, which uses
+DESeq2), so it can be run once and reused with different dependence
+methods or modified to add differential expression.</p>
 </div>
 <div id="load-data" class="section level2">
 <h2>Load data</h2>
@@ -374,121 +389,102 @@ set that should be mimicked. This data can be almost any shape,
 including continuous, or discrete. Here, we will simulate RNA-seq, which
 has discrete counts that we handle with a special “DESeq2” model. Other
 data types can use normal, Poisson, or empirical (which uses only the
-values present in the data set) types, or even a combination of
-these.</p>
+values present in the data set) marginal distributions, or even a
+combination of these.</p>
 <p>We will use the following data set, which is a trimmed-down RNA-seq
 data of 1000 genes on 12 samples, originating from GSE151923.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">head</span>(read_counts)</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 13</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 x 13</span></span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;   gene_id     Arpp19_10_3 Arpp19_4_1 Arpp19_5_1 Arpp19_5_3 Arpp19_5_4 Arpp19_6_1</span></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; 1 ENSMUSG000…        2377       2162       2169       2650       2217       2552</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 2 ENSMUSG000…         908        799        730        941        761        780</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; 3 ENSMUSG000…         316        342        373        373        325        405</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; 4 ENSMUSG000…         584        650        466        687        551        606</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 5 ENSMUSG000…        2739       2531       2594       2988       2614       3081</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; 6 ENSMUSG000…         807        753        746        894        806        819</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; # ℹ 6 more variables: Arpp19_7_2 &lt;dbl&gt;, Arpp19_9_1 &lt;dbl&gt;, Dach1_11_1 &lt;dbl&gt;,</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; 1 ENSMUSG000~        2377       2162       2169       2650       2217       2552</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 2 ENSMUSG000~         908        799        730        941        761        780</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; 3 ENSMUSG000~         316        342        373        373        325        405</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; 4 ENSMUSG000~         584        650        466        687        551        606</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 5 ENSMUSG000~        2739       2531       2594       2988       2614       3081</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; 6 ENSMUSG000~         807        753        746        894        806        819</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; # i 6 more variables: Arpp19_7_2 &lt;dbl&gt;, Arpp19_9_1 &lt;dbl&gt;, Dach1_11_1 &lt;dbl&gt;,</span></span>
 <span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; #   Dach1_2_2 &lt;dbl&gt;, Dach1_3_1 &lt;dbl&gt;, Dach1_5_3 &lt;dbl&gt;</span></span></code></pre></div>
-<p>We first just format it as a matrix for use with
-<code>dependentsimr</code> instead of as a tibble.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>count_matrix <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(read_counts[,<span class="dv">2</span><span class="sc">:</span><span class="fu">ncol</span>(read_counts)])</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">rownames</span>(count_matrix) <span class="ot">&lt;-</span> read_counts<span class="sc">$</span>gene_id</span></code></pre></div>
+<p>The data has genes in rows and samples in columns. It can be given
+directly to <code>dependentsimr</code> as a data frame with gene names
+in the first column, or as a numeric matrix.</p>
 </div>
-<div id="get-dependence-structure" class="section level2">
-<h2>Get Dependence Structure</h2>
-<p>The first step is to compute a ‘random structure’ for the data, which
-encodes how the variables (genes, in this case) in the data set are
-dependent upon each other. This computes a covariance matrix which
-captures the dependence between genes, however, that matrix is not the
-same as the usual sample covariance matrix. It also computes the shape
-(such as mean and variance) of each variable individually.</p>
+<div id="fit-the-marginal-distributions" class="section level2">
+<h2>Fit the marginal distributions</h2>
+<p>First we fit the marginal distribution of each gene. For RNA-seq,
+<code>method = &quot;DESeq2&quot;</code> uses a negative binomial model with
+sample-specific size factors (to account for read depth), as in
+DESeq2.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>marginals <span class="ot">&lt;-</span> <span class="fu">fit_marginals</span>(read_counts, <span class="at">method=</span><span class="st">&quot;DESeq2&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>marginals</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; dependentsimr marginals: 12 samples</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   data: 1000 features, method &#39;DESeq2&#39;</span></span></code></pre></div>
+</div>
+<div id="fit-the-dependence" class="section level2">
+<h2>Fit the dependence</h2>
+<p>Next, we compute how the genes are dependent upon each other. This
+computes a covariance matrix which captures the dependence between
+genes, however, that matrix is not the same as the usual sample
+covariance matrix.</p>
 <p>There are three implemented methods (“pca”, “spiked Wishart”, and
-“corpcor”) with different characteristics. We demonstrate here each.</p>
+“corpcor”) with different characteristics, plus “independent” for
+comparison. Since the marginals are already fit, trying each of these is
+fast.</p>
 <p>First, the “pca” method takes a <code>rank</code> and includes only
 gene-gene dependence up to that many dimensions. Typically small values
 (2 or 3, for example) would be used for <code>rank</code>, similar to
 when performing PCA, unless a large number of input samples are
-available. Note that we put our <code>read_counts</code> data into a
-<code>list()</code>. This is done since
-<code>get_random_structure</code> also supports multiple data sets of
-different ‘modes’ (for example, proteomics and transcriptomics done on
-the same samples). We only have one ‘mode’ that we give the arbitrary
-name of <code>data</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>rs_pca <span class="ot">&lt;-</span> <span class="fu">get_random_structure</span>(<span class="fu">list</span>(<span class="at">data=</span>count_matrix), <span class="at">method=</span><span class="st">&quot;pca&quot;</span>, <span class="at">rank=</span><span class="dv">2</span>, <span class="at">types=</span><span class="st">&quot;DESeq2&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; converting counts to integer mode</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; estimating size factors</span></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; estimating dispersions</span></span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; gene-wise dispersion estimates</span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; mean-dispersion relationship</span></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; final dispersion estimates</span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; fitting model and testing</span></span></code></pre></div>
+available.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>dep_pca <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals, <span class="at">method=</span><span class="st">&quot;pca&quot;</span>, <span class="at">rank=</span><span class="dv">2</span>)</span></code></pre></div>
 <p>Second, the spiked Wishart method also takes a <code>rank</code>
 value but uses it differently. Typically, this will be larger, up to the
 total number of samples minus one, which is what we use here. For very
 large sample counts, <code>rank</code> might need to be capped well
 below the number of samples for computational efficiency reasons.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>rs_wishart <span class="ot">&lt;-</span> <span class="fu">get_random_structure</span>(<span class="fu">list</span>(<span class="at">data=</span>count_matrix), <span class="at">rank=</span><span class="dv">11</span>, <span class="at">method=</span><span class="st">&quot;spiked Wishart&quot;</span>, <span class="at">types=</span><span class="st">&quot;DESeq2&quot;</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; converting counts to integer mode</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; estimating size factors</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; estimating dispersions</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; gene-wise dispersion estimates</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; mean-dispersion relationship</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; final dispersion estimates</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; fitting model and testing</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>dep_wishart <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals, <span class="at">method=</span><span class="st">&quot;spiked Wishart&quot;</span>, <span class="at">rank=</span><span class="dv">11</span>)</span></code></pre></div>
 <p>Third, a method based off the <code>corpcor</code> package is
 implemented. It takes no parameters but often underestimates the amount
 of gene-gene dependence in the data.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>rs_corpcor <span class="ot">&lt;-</span> <span class="fu">get_random_structure</span>(<span class="fu">list</span>(<span class="at">data=</span>count_matrix), <span class="at">method=</span><span class="st">&quot;corpcor&quot;</span>, <span class="at">types=</span><span class="st">&quot;DESeq2&quot;</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; converting counts to integer mode</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; estimating size factors</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; estimating dispersions</span></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; gene-wise dispersion estimates</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; mean-dispersion relationship</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; final dispersion estimates</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; fitting model and testing</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; Estimating optimal shrinkage intensity lambda (correlation matrix): 0.7601 </span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; Estimating optimal shrinkage intensity lambda.var (variance vector): 1</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>dep_corpcor <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals, <span class="at">method=</span><span class="st">&quot;corpcor&quot;</span>)</span></code></pre></div>
 <p>Lastly, we could generate data without gene-gene dependence for
-comparison by removing the dependence from any of our random
-structures.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>rs_indep <span class="ot">&lt;-</span> <span class="fu">remove_dependence</span>(rs_pca)</span></code></pre></div>
+comparison.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>dep_indep <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals, <span class="at">method=</span><span class="st">&quot;independent&quot;</span>)</span></code></pre></div>
 </div>
 <div id="generate-data" class="section level2">
 <h2>Generate Data</h2>
 <p>Real RNA-seq data sets typically have variation between samples in
 the total number of reads per sample. Here, we just copy the total
-number of reads from the real data set to get realistic values. A
-<code>library_size</code> of 1 corresponds to the average read depth of
-the data used to generate the random structure. This step is only needed
-when generating RNA-seq data with <code>type = &quot;DESeq2&quot;</code>.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>actual_library_sizes <span class="ot">&lt;-</span> count_matrix <span class="sc">|&gt;</span> <span class="fu">apply</span>(<span class="dv">2</span>, sum)</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>N_SAMPLES <span class="ot">&lt;-</span> <span class="dv">6</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>library_sizes <span class="ot">&lt;-</span> <span class="fu">sample</span>(actual_library_sizes <span class="sc">/</span> <span class="fu">mean</span>(actual_library_sizes), <span class="at">size=</span>N_SAMPLES, <span class="at">replace=</span><span class="cn">TRUE</span>)</span></code></pre></div>
+number of reads from the real data set to get realistic values. A size
+factor of 1 corresponds to the average read depth of the data used to
+fit the marginals. This step is only needed when generating RNA-seq data
+with <code>method = &quot;DESeq2&quot;</code>.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>count_matrix <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(read_counts[,<span class="sc">-</span><span class="dv">1</span>])</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>actual_library_sizes <span class="ot">&lt;-</span> count_matrix <span class="sc">|&gt;</span> <span class="fu">apply</span>(<span class="dv">2</span>, sum)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>N_SAMPLES <span class="ot">&lt;-</span> <span class="dv">6</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>library_sizes <span class="ot">&lt;-</span> <span class="fu">sample</span>(actual_library_sizes <span class="sc">/</span> <span class="fu">mean</span>(actual_library_sizes), <span class="at">size=</span>N_SAMPLES, <span class="at">replace=</span><span class="cn">TRUE</span>)</span></code></pre></div>
 <div id="simulate-control-data" class="section level3">
 <h3>Simulate Control Data</h3>
 <p>Now we generate some ‘control’ samples, which have the same
 expression levels (as well as gene-gene dependence) as was estimated
-from the original data set. We’ll use <code>rs_pca</code> that we
+from the original data set. We’ll use <code>dep_pca</code> that we
 generated above for example, but any of the methods could be used. Each
 column is a separate simulated sample. Samples are independent of each
 other in this model, however genes within a sample are dependent upon
 each other.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>control_sim_data <span class="ot">&lt;-</span> <span class="fu">draw_from_multivariate_corr</span>(rs_pca, <span class="at">n_samples=</span>N_SAMPLES, <span class="at">size_factors=</span>library_sizes)<span class="sc">$</span>data</span></code></pre></div>
-<p>Note that we used <code>$data</code> here because that was the name
-we provided to <code>get_random_structure</code> and it was the only
-mode of data that we had. If multiple modes were used to generate the
-random structure, then we <code>draw_from_multivariate_corr</code>
-returns a list with each of them.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>control_sim_data <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals, dep_pca, <span class="at">n_samples=</span>N_SAMPLES, <span class="at">size_factors=</span>library_sizes)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">dim</span>(control_sim_data)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; [1] 1000    6</span></span></code></pre></div>
+<p>If multiple datasets (for example, proteomics and transcriptomics on
+the same samples) were given to <code>fit_marginals()</code> as a named
+list, then <code>simulate_data()</code> returns a list with each of
+them.</p>
 </div>
 <div id="simulate-differentially-expressed-data" class="section level3">
 <h3>Simulate Differentially Expressed Data</h3>
 <p>To generate a set of ‘treatment’ samples which differ from the
-‘control’ samples, we will have to modify the random structure to
-reflect the desired expression values of the treatment group. We do this
-by just choosing some genes at random and picking a fold-change for each
-at random.</p>
+‘control’ samples, we choose which genes are differentially expressed
+(DE) and by how much.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># fraction of all genes to modify in treatment</span></span>
 <span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>FRAC_DE <span class="ot">&lt;-</span> <span class="fl">0.1</span></span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co"># Min and max value for the log fold change (LFC) for each DE gene chosen</span></span>
@@ -498,41 +494,124 @@ at random.</p>
 <span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>N_DE <span class="ot">&lt;-</span> <span class="fu">floor</span>(FRAC_DE <span class="sc">*</span> <span class="fu">nrow</span>(control_sim_data))</span>
 <span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a></span>
 <span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co"># Pick which genes are DE</span></span>
-<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>de_genes <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">nrow</span>(control_sim_data), N_DE)</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>de_genes <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">rownames</span>(control_sim_data), N_DE)</span>
 <span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a></span>
 <span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co"># Pick the LFCs of each of those genes</span></span>
-<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>de_lfc <span class="ot">&lt;-</span> <span class="fu">runif</span>(N_DE, LFC_MIN, LFC_MAX) <span class="sc">*</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">size=</span>N_DE, <span class="at">replace=</span><span class="cn">TRUE</span>)</span></code></pre></div>
-<p>Now, we create a new random structure object and modify it to have
-the desired expression values. Information about the marginal
-distribution of each gene (e.g., mean and variance but not dependence on
-other genes) is stored in <code>rs$marginals</code> for a random
-structure <code>rs</code>. The specifics depend upon the
-<code>type</code> used in <code>get_random_structure</code>, but for
-<code>DESeq2</code>, the <code>q</code> value determines the mean
-expression, so we change that here.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>rs_treatment <span class="ot">&lt;-</span> rs_pca</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>rs_treatment<span class="sc">$</span>marginals<span class="sc">$</span>data<span class="sc">$</span>q[de_genes] <span class="ot">&lt;-</span> <span class="dv">2</span><span class="sc">^</span>(de_lfc) <span class="sc">*</span> rs_treatment<span class="sc">$</span>marginals<span class="sc">$</span>data<span class="sc">$</span>q[de_genes]</span></code></pre></div>
-<p>Lastly, we generate the data for the ‘treatment’ samples.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>treatment_sim_data <span class="ot">&lt;-</span> <span class="fu">draw_from_multivariate_corr</span>(rs_treatment, <span class="at">n_samples=</span>N_SAMPLES, <span class="at">size_factors=</span>library_sizes)<span class="sc">$</span>data</span></code></pre></div>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>de_lfc <span class="ot">&lt;-</span> <span class="fu">runif</span>(N_DE, LFC_MIN, LFC_MAX) <span class="sc">*</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">size=</span>N_DE, <span class="at">replace=</span><span class="cn">TRUE</span>)</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="fu">names</span>(de_lfc) <span class="ot">&lt;-</span> de_genes</span></code></pre></div>
+<p>Now, we add a ‘treatment’ effect to the marginals with these log2
+fold changes. All genes not named in <code>de_lfc</code> get no effect.
+For DESeq2 marginals, effects are log2 fold changes; for Poisson they
+are natural-log fold changes and for normal they are additive
+shifts.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>marginals_de <span class="ot">&lt;-</span> <span class="fu">add_effect</span>(marginals, <span class="st">&quot;treatment&quot;</span>, de_lfc)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>marginals_de</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; dependentsimr marginals: 12 samples</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt;   data: 1000 features, method &#39;DESeq2&#39;</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;   new_design columns required: (Intercept), treatment</span></span></code></pre></div>
+<p>The simulated samples are then specified by a <code>new_design</code>
+matrix, with one row per sample and a column for each coefficient: the
+intercept and our new treatment effect. Here, we simulate both groups at
+once. The dependence fit from the original marginals can be reused
+as-is, since the dependence does not depend on the coefficients.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>new_design <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="st">&quot;(Intercept)&quot;</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">treatment =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">each=</span>N_SAMPLES)</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>)</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>sim_data <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals_de, dep_pca, <span class="at">new_design=</span>new_design, <span class="at">size_factors=</span><span class="fu">c</span>(library_sizes, library_sizes))</span></code></pre></div>
 </div>
 </div>
 <div id="plot-the-generated-data" class="section level2">
 <h2>Plot the generated data</h2>
 <p>To demonstrate the data, we show a PCA plot of the control and
 treatment groups.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>sim_data <span class="ot">&lt;-</span> <span class="fu">cbind</span>(control_sim_data, treatment_sim_data)</span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(<span class="fu">t</span>(sim_data), <span class="at">center=</span><span class="cn">TRUE</span>, <span class="at">scale.=</span><span class="cn">TRUE</span>, <span class="at">rank.=</span><span class="dv">2</span>)</span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>pca_points <span class="ot">&lt;-</span> <span class="fu">predict</span>(pca, <span class="fu">t</span>(sim_data))</span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>pca_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">x=</span>pca_points[,<span class="dv">1</span>], <span class="at">y=</span>pca_points[,<span class="dv">2</span>]) <span class="sc">|&gt;</span></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">group =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">&quot;control&quot;</span>, N_SAMPLES), <span class="fu">rep</span>(<span class="st">&quot;treatment&quot;</span>, N_SAMPLES)))</span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="fu">ggplot</span>(pca_data, <span class="fu">aes</span>(x, y, <span class="at">color=</span>group)) <span class="sc">+</span></span>
-<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;PC1&quot;</span>, <span class="at">y =</span> <span class="st">&quot;PC2&quot;</span>)</span></code></pre></div>
-<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(<span class="fu">t</span>(sim_data), <span class="at">center=</span><span class="cn">TRUE</span>, <span class="at">scale.=</span><span class="cn">TRUE</span>, <span class="at">rank.=</span><span class="dv">2</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>pca_points <span class="ot">&lt;-</span> <span class="fu">predict</span>(pca, <span class="fu">t</span>(sim_data))</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>pca_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">x=</span>pca_points[,<span class="dv">1</span>], <span class="at">y=</span>pca_points[,<span class="dv">2</span>]) <span class="sc">|&gt;</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">group =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">&quot;control&quot;</span>, N_SAMPLES), <span class="fu">rep</span>(<span class="st">&quot;treatment&quot;</span>, N_SAMPLES)))</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="fu">ggplot</span>(pca_data, <span class="fu">aes</span>(x, y, <span class="at">color=</span>group)) <span class="sc">+</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;PC1&quot;</span>, <span class="at">y =</span> <span class="st">&quot;PC2&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASAAAAEgCAIAAACb4TnXAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAgAElEQVR4nO3deUBU5fo48PecM3NmYYBhUdkF0ZQlXEIN3E0qzYWberXUn1uZXXMpr37N7UKaRmVmdq+atuBVS9IKDbGiawFFWkridVcUFGQdGIbZl/P74825EzhzDjBnGOD5/HXmzDPvedF55mzv+xyCYRgEAOAH2d4dAKAzgwQDgEeQYADwCBIMAB5BggHAI0gwAHgkaO8O2GUymXQ6HetdBIFAwDCM2Wx2HEaSpEgk0uv1FouFNZIkSZPJ5DiMIAixWGwwGFg3TRCEQCAwGo2OwxBCYrHYZDKxbhohRNO0wWBgDROJRBaLxcGmPT09WRsBbeG+CSYQCAwGA2s+EARhsVhYv20CgcDDw6OxsZH160vTNEJIr9c7DiNJUiaTabVa1kiKoiiKYg1DCMlkMoPBwBpJEARN01walEqlFovFQSQkGN/gEBEAHkGCAcAjSDAAeAQJBgCPIMEA4BEkWFcCMydczn0v0wMnoirvib8/SZbdYTy99EMSjYOGtHePugrYg3V+hF4nzvycLLuDECJUDeLvTwqvXW7vTnUVbr0H43IblCRJhJBEInEcRhAEQkgmk7EODSEIAt/J5dJDqVQqFotZGyRJUiBg/6fGo0O4bJqiKG9vb9YwkiRpmibrFYyy3na9uPi6dPCjrB8HbefWCaZSqVhHcojFYo4jOeRyOceRHBRFabVax2EkSfr6+mo0Gi4jOcRisVqtdhyGEPLz89PpdKybJghCJpOpVCrWBn18fIxGo66xUYwQYbPeqNfrlEqEkL+/P2sjoC3gELHzMwWFIK8/7e5Mvfu2V2e6GkiwLkAi1T6VbPH7Y2dlGDbKFBPXvj3qOtz6EBE4izmkp3rB3widlqFFiIRfVdeBBOtCGDHLpSDgdPBjBgCPIMEA4BEkGAA8gnMwlyIalIKSYoYgzZEPMWw3x0EnAAnmOoLi65Kjn+JlxtNLO2W6OTC4fbsE+AaHiK4jzsm2LhOqBvF/TrZjZ4BrQIK5CKHVEH8eEEiWl8H8kU4PEsxFGLGEkUht11h8/RBB2IsHnQOcgzkNodUKfyugqqss3nLD4ATmz8P/EEEYBieIcr+3rtAnjHR1F4HLQYI5B2EySj9LJ2uqEGIQIoQ3rqpnLWBkf5puYxg6zOLnL7hxFZGkMephc2jP9uotcBlIMOcQ3LhG1lQhhPC8EKJBSV/4XZ8wokmYqXdfGMnepfB+DtbY2FhQUGC7xmw2FxQUZGdn3717l++tuwyhamBdA7ogfhOssLBw/fr1aWlp1jUMw2zYsCEvL0+j0aSkpBQVFfHaAZcxBwQ1XRPYdA3ogvhNsDNnzqxdu9Z2TVFRkVqtXr169dSpUxctWnT06FFeO+Ay5tCexoGDrS9NkQ8ZY/q3Y3+Am+D3HOyFF17Q6XS2a65fvx4VFYWXo6Kitm3bZn1LpVJ98sknePmRRx5JTEyUSqWsJTQoimIYRigUOg6zlu7g+HQV0mbSFHH9Kio6hywW1C+aiR2Ar63jIh8ikeh/xTamTGOGJjIV95CvHxkW7mH9OEHgR0843i66/1QHksN8LY4N4logXCIBT1x9kUOtVstkMryMn05iMBhwmRedTpeTk4Pf8vb2TkxMZE0bdP+LzqWUDUJIKBRyLHpj/ZZbfvvF8sXhP967WETV1ZHjnrQGCwQCiqL+9+GwcBQW/sAGCW63vCiK4pJguJoNaxhBEBRFcdw04IOrE8zDw0OpVOJlvV4vEAisWdStW7fMzEzbYKVS6dyiNw0NDS0teuNxKsf2+24uyFMOHIx3c76+vmq12rlFb7RardOL3jQ2NtoLgKI3fHP1SI7AwMCysjK8XFZWFhAQ4Oa/r2Rdre1LQqshdCwJAIAVjwlmsViqqqqqq6sRQtaFwYMHFxcXnz9/Xq1WZ2RkJCUl8dcBW2RNlfGjXZIdadL0D1pUdtMcEmb70uItZ6RwSgO4IljPSVpNqVTaXqCnaTolJQUhdOXKlQMHDiiVyvj4+NmzZ//pHObPFAqFUw4RCZ3O4997ifo66xrNjP9nbnayZO2n7SEiVV0p+eIzokGJ8ByTJyebw3uh+3URVSqVcw8RNRoNHCJ2JjwmWNs5K8EEN65Kvjxsu8YYN0j3xMQHBjcvPErodYKSW8hiMYWFW3dfkGCAiy4xVIowNks/Do8kt2JEYuNDUc7sEOgyusR0FVNwWNM1EZHt0hPQ1XSJBGO8vA1PzyS85filYUiiKfrh9u0S6CK6xCEiQsjcN5qOH6osuW0SSxhuT04BoO26SoIhhBBFMb5+DNuNZgCcqEscIgLQXiDBAOARJBgAPIIEA4BHkGAA8AgSDAAeQYIBwCNIMAB41AFuNJPKeuHvZwmN2hwaZoyOg0cMgw7Eraer6PV6puIe8a93rGuY2P5o+izbGFz0hkspG5qmDQYDl0iCIMxms+MwgiBEIpHRaOQSSVEUa6kChJBYLDaZTFwihUKhkcOEAJFIZLFYHESKxWLWRkBbuPUeTKfTCXO/t52PSfz3vC5hpMXvf7OYWL9DGEVRNE3r9XrWr69QKCRJknWWF04wg8HAWg4Eb5p1lhdCCGdskzpcD9w0SZJcGhQKhSaTyUEkJBjf3DrBzGazsE7RZCWjqDHLfawvLRaLxWLhshvBDbJG4jJMrGG49hOXTSOEGIbhEsaxQYIguDfIPRLwwd3PZyzdejRZY/bv3i49AaAV3D3B9IkjLT6+6P55omHY6KaPBQLAjbn1ISJCiPGQaea9QF27TGq15pAwc4/A9u4RAC3g7gmGEGIEQlN0XHv3AoDWcPdDRAA6NEgwAHgECQYAjyDBAOARJBgAPIIEA4BHkGAA8AgSDAAeQYIBwCNIMAB41A5DpRoaGqzLNE3DlCTQibk6wRobG+fOnRsREYFfjhw5Mjk52cV9AMBlXJ1garXa39//nXfeYQ8FoONrhwSTSqVGo1GpVPr5+eGJxphOp8vPz8fL4eHhvXv3pmmatWSIQCBgGMa2nQfCT4LGj4dlbZAkSZFI5DgMb1EgYP8HJEmSoijWBq1b5xLJpYfofjkQjpsGfHB10ZsLFy5s3bo1ICBAIpGUl5evXLkyNjYWv1VRUTFx4h/PTZ47d+7SpUtd2TEA+ODqBFOpVKWlpdHR0QRBFBQU7N+/f9euXfgts9lcUVGBlz09Pb28vJRKJWsRKO5Fb7y8vFQqlROL3sjlcrVazVr0Bu9tuNSokcvlOp2OS9EbqVTK5anqXl5eJpNJo9HYC/Dx8bH3FnAKVx8ienp6xsTE4OXY2NiKigrrAR5FUcHBwbbBZrOZNcGg6I2zNg344Or7YAUFBVu3bsW7zdOnT/fu3Zv19AmAjsvVe7D4+Pj8/PwXXnjB09PTbDavXLnSxR0AwJVcnWBCoXDVqlUGg8FkMkmlUhdvHQAXa5+iNzRN0zTdLpsGwJVgLCIAPIIEA4BHkGAA8AgSDAAeQYIBwCNIMAB4BAkGAI8gwQDgESQYADyCBAOAR5BgoK2MRuPu3buXLFmyc+dOlUqVkpJSXl5uNptTUlJu376dkpKyb98+HJmVlbVq1aply5Z9/PHHeBKNwWDAYThAoVCkpKQoFAqTyZSSklJaWvrBBx8sWrTo9ddfVyiaPq27Q4AEA22VnJz81ltvRUdHV1ZWPv3006mpqbW1tSRJpqamLlmy5OLFi3jc6Zo1axYsWBASEtK/f/933303KSnJbDYbDIbU1FTbBEtNTVUoFAzDpKamPvPMM1evXh04cOBXX32VkJDAZdKqu+kAT7gE7uzSpUsnTpzIy8sbPnw4QmjDhg05OTkEQeByIHK5/ODBgwihsrKybdu2ffXVV0899RRCaOzYsZGRkd9+++2IESMe2CyeJRgTE7Nt2zaE0OTJk8PCwrKysqZNm+a6v80Z3DrBoOiNvU1zbNAFRW8uXLiAEBo6dCh+mZycvHnzZuu7SUlJeKGoqMhkMo0aNQq/jIiICAoKOnv2rL0Ew8aMGYMXgoODg4ODL168CAnmTFwmO+MYjtOi8S+rUzZt3S6XSI7b5RjZoj+5RZGtoNFoaJoWCoX4pa+vr+27crkcLygUCpIkPTw8rG95eXmxlhXx9PS0XWYtf+KG3DrB9Ho9a00OhJDFYmH9pxcIBFKpVK/Xsxa9wXs51soz+OtiNBpZy+PgIh+sDSKEcINcit4IBAIuDUokErPZ7CBSJpOxNuKYt7e3wWBobGzETZWUlDwwLDg42GKxVFdXd+/eHa+pqqrq3r27tbQJXtnkSkZ1dbV1uba2NiAgoI29dT24yAHaJD4+niCIzMxMhBDDMO+//769MH9//0OHDuGX3333nUKhSEpKkkqlnp6eV69exeutAdjRo0fxOUJhYWFlZWViYiKPfwk/3HoPBtxfWFjYq6++unDhwkOHDlVWVk6bNu3o0aPNw2Qy2Y4dO5577rn8/HyRSHTixIk333wTl8RcsGDB6tWr8/Pz79y5g0/JrCfeHh4eI0eO7NOnT1ZW1pw5cx555BFX/mlO4eq6iC2iUChYDxHFYjHHQ0S5XF5fX8/xEJH1ijBJkr6+viqVissholgs5lLG0M/PT6PRsG6aIAiZTKZSqVgb9PHxMRqNjY2N9gL8/f1ZG+Hixo0bN2/ejIuLq6uri4mJKSsrCwoK+vHHH2NiYmw3UV5enpeXJxKJBg0aFBYWZl2fl5dXUlISGxsbFxeXm5s7ePBgkUgkFApPnjwZGhpaWFgYERGRkJDQEQuQwR4MtAnDMLNmzZo0adIzzzyDENq3b19wcHBQUBBCyHrN0CooKGjGjBnNGxkxYoT1cuLo0aMRQvh3kGGY6Ojo6OhoPv8CfkGCgTYhCOKxxx57/vnn9+zZo9Vqb968iW98AQwSDLTVwoULk5OTL1y4IJFIYmJi2n5lEiFEUdTx48c74klXE5BgwAn8/PzwoZ2zEARhfRJIhwaX6QHgESQYADxylGAajebXX38tLi5usv7gwYNlZWV89gqATsJugp09ezYyMnLIkCGRkZHPPvus7TOmNm3adP36dZd0D4COze5FjpUrV44dO3br1q01NTUvvvjilClTTpw4YR3TCQDG5X43K9tBvZ2M3T3YuXPnXn/99bCwsEGDBv34449qtfrFF190Zc8A6ATsJphIJLL+OInF4szMzFOnTtlO9QEAsLJ7iPjEE08sWbJk9+7deKBKt27dsrOzx4wZU11dzTr6DgCA2d2Dvf3220aj8e9//7t1zUMPPZSfn19YWGitoNA6Z86cWbZs2aJFi9555x0uk5oA6LjsJlhAQEBBQcGBAwdsV0ZEROTm5ubn5/fv379126urq9u5c+eqVav27NkjkUgyMjJa1w4AHQLLjeYmM8CxYcOG+fj4tG57Z8+ejY2NDQ0NJQhi0qRJubm51rcsFkvDffgolHAqPhp0bpvcW+MYydrD1v0nAu4cjUU8duxYfn7+m2++aV2zbt06hNDmzZtb/X9TUVFhnTTevXv3mpoaa8maqqoq6/CzuXPnLl26tNVpbI+3tzfHSI7Pj+Z+fVksFnPcLsdNcyxlg2ejcYkEfLCbYPn5+VOnTl28eLHtyuHDh8+ZM0cgEKSmprZ+k/crMeGCUCaTCd9ek8vlb7zxBn4rPDwcIdTY2Mg6H1QoFOJGHIdRFCWVSjUaDa536bh7JEmyzuAkCEImk2m1WtZNkyQpFAq5XBmSyWQGg4FLaRexWMyxyIfjmhyuuAFlNiO2Sl58MBgMJpOJy6/VxIkTv/76a566YTfB0tLSZs+evXPnTtuV48ePP3LkyIQJE5YvX/7Ao0dWPj4+1mskDQ0NHh4e1pvXYrF43LhxtsEGg4F1RjNBENyL3uB/dMeRDMNQFMWaD7hai8lk4jKjmSRJjgnGpUGCIGia5tKgVCo1m80OInlNMPLmderbLKK2mvGWm8c8bolt5Xl766Snp+v1+pdeesmVG23O7jnYmTNnFi5c2Hz96NGjQ0NDT58+3brtxcbGnj9/Hu9Gzp07FxcX17p2gJsj6hSCTz8haqsRQoSyXvBVBnG3tKWN6HS6tWvXjhgxYtasWbdu3UIIabXa9evXjxkzZsqUKd988w0Oe+21106cODFjxoxhw4Zt374dIfTTTz+lpaXt3r179+7dKSkpn3322ZgxYy5duvTAj/PK7h6srq7OerLURPfu3VtdKLxnz559+/bduHFjRETEzz//vH79+ta1A9wccfNakzXk1cvmkLAHBtvz6quvmkym7OzsQ4cOTZ069dy5c6tXr9ZqtSdPnrx9+/bIkSN/+umn3r17nzt37ocffjh06JBarR48ePCUKVMeffTR4cOHx8XFLViwYPr06bm5udu3b4+IiHjgx533Rz+Ao8v0V65cab7eaDReunQpJCSk1Zt85ZVXnn322ejo6O3bt/fq1avV7QB39oCLYAx7icsmjhw5smTJEplM9vzzz+fk5CCEvvzyyxUrVohEor59+z7++OPZ2dk4cubMmQEBAZGRkf369SspKaEoSiAQ0DRN0zRBEMnJyQMGDJBIJPY+zh+7e7Cnnnpq06ZNSUlJEonEdn1KSgpFUW2pUEcQRExMTKs/DjoES68+Ta5sWPq2uHZNTU0NvvBLEAQ+56+trbWe/Pv4+FiPpLy8vPACSZLNr2NZj8XsfZw/dvdgGzZsuHv3bnR09K5du37++efCwsLDhw+PHj16y5Yt7733HgyrB44xvn6mGXMYuQ9CCHl6mSY9zYT2bGkjoaGh+JKY0WhMT09nGCY0NPTOnTv43dLSUtvabxwbbMvHW8HuHiwoKKigoGDZsmUvvfSS9VLeww8/nJWVNWHCBL67BToBS59+lj79CKOBEdKta2Hx4sVr1qxJSUn5+uuvL168OHfu3CVLlmzYsGHr1q2XL18uLCzcv3+/vc96enrm5uaOHDnSdiX3jzuLoxvN4eHhx44dUyqV169fN5vNISEhwcHBfHcIdDKtzi6E0CuvvNKzZ89jx46FhITgW6/Lly/v2bPnwYMH/fz8fvnlF3xkOHPmTFwkGCG0YMECfGL/8ssv79ix48qVK7bvPvDjzz77bBv/Rgegsm9TUNm3RWDCpWN2z8EYhtm6dWtoaKinp+fEiROtR64AAO7sJtihQ4c2bdo0d+7ctLQ0hUIxdepUd97XAeCe7J6Dffrpp+vWrcOje2fPnh0SEnLp0iW4vA5Ai9jdg5WUlMTHx+NlLy+vvn37tnGeJQBdkN0EMxqNthMiRCKR0Wh0SZcA6Dygsi8APHJ0H2zHjh1HjhzBy8XFxXv37sXjwRBCy5cv79OnD++9A6CDs5tgsbGxt2/ftl6dDwoKqqysrKysxC/nz5/vit4B0MHZTTDrvgsA0Gpu/XwwLoVZONZvsS0Uw3HTHAO4b5rjdp31JzfpAGgXbp1gUqmU9e42RVEMw7CO7scz/CUSCevYK5IkCYKg2MpI4G+tWCxm3TRuzcPDw3EYul8LAHfVMY4N4nIgXCIBT9w6wdRqtRPHItI0rdFonDgWUSQS6XQ6J45FFIlEer2e41hEByMMrYRCoeOxiFBwim9wmR4AHkGCAcAjSDDAlzxV4/DL173OFj1y8eqxOmUrWti7d+/777/f6g608eNOadCtz8FAx3XHYHzq2h8PH76u088uLjnVr88jHhLHn7KFS6+JxWKBQFBRUdGvX789e/b885//7N279xtvvPHDDz94e3uvWrUKl4epr69ft27d+fPn5XL56tWrccUo68erqqr69+//8ccfKxSKjRs3FhcXp6en9+3b9/3338fVMps3+Nprr8XHx6enp9+9e3fatGkvv/yybYNNCvI6AAkGePGtsqHJmuP1yhYlmL3Sa+vWrauvrz958uTNmzfHjRt39uzZgICAbdu2SaXS3NzcM2fOTJgwobq62vbjf/3rX0+fPn3o0KHs7OwZM2a89dZbOTk5EydOzMjImDdv3gMbdFwKjvtfAYeIgBfNr9UaWzif0F7ptcOHD0+aNOnatWtms3ngwIG49NqmTZtWr15dUFCgUql0Ol1lZaXtxxFCf/nLX7y9vUeMGKHRaObPny+RSIYMGYIHKj2wQeSwFBz3vwL2YIAXoz1lTdY84d2mugDW0mvV1dUHDx7E1QT9/f27deuGENqyZUtGRkZycrJMJmMYpvndHZlMhu7fP8T3MCmKwgXeHtggYisFxxEkGOBFX7Hok4iwtWX3yg1GhNDboUEjm6Vc6/Ts2XPlypVDhgxBCBkMBrw/SUtL++233/r06VNRUbF69eq2N+gscIgI+PK0r/zyw1HX46LqBj28qHtrquvg0mtFRUW2K5cuXbpy5cqCgoLs7OyYmJjS0lKEUFBQ0HfffXfq1KlVq1YFBgbm5uYyDPPAjzf3wAa598cxKiUlhXu0i2m1WtahUvgZSKx7cJIk8SN/WIeG4IehsA74IAhCIpEYDAYumxYIBFymq0qlUqPRyGXTNE1zecoRHhrmIJLjs8gccNwNAiEZRZFsgyHtPessOjr68uXLYrE4JiYmNjYWHyUOGTKkR48eWVlZd+/eff311/G0qXHjxuXk5JSWlv7f//1fQkLCr7/+OmbMmJiYmOYfp2l62LBhuP2IiIjw8PAHNogQsn4EITRw4EAfHx/b/nD894GybU1B2bYWgbJtjsEhIgA8ggQDgEeQYADwCBIMAB65+j6Y0Wj86KOPrC8ffvjhtjxqDAA35+oEa2xszMvLW758OX4ZEBDg4g4A4ErtkGBeXl6DBw928XYBTzrxFXancHWCqdVqgiCOHDlSXl4eGRn55JNPWqtf1NbWrlixAi9PnDhxxowZ1sFgDpAkyTAM6w1TPPzM09OT9b4fridj79ZnE1KptMkjdu01yOWZoPjmNZdNUxQll8tZw0iSpGmaSyTgiSsSzGAw6HQ6hJBEIqEoysfHx9/fPyoq6vPPP7958+ayZctwmFAojIqKwst4wKXZbOZY9IZLKRs8uJNLJMeRHAKBwGKxsI7kwEVvWBtECOEGuUQSBMElDP/jOIgUCGAwKr9cMZIjOzv72LFjCKHZs2dbR6kghGpqal588cWMjAx7dcVgJMcDudVIDuCYK37Axo8fP378eLx8586dhoYGPJRLr9fjqT4u6AMA7aIdLtOnpaXNnTvX29s7IyPjqaeecnEHAHAlVydYr169UlNT8/Lybt++/fTTTz/66KMu7gAArtQO57gRERERERGu3y4ArgdDpQDgESQYADyCBAOAR5BgAPAIEgwAHkGCAcAjSDAAeAQJBgCPIMEA4BEkGAA8ggQDgEeQYADwqKsk2DcNqugz53x+vzjixu3vG9nnPgLgFF0iwS7r9DOLSy9rtAihKzr9zNt3r+pYpiED4BRuXZIBP0zNcQwuO+G4UMwpZdM58z8YjPHdHjxbniRJXG/D8XbxRGyxWMz6OClck4Mk2X/LcLEdLnUyhEIhl3JOJElyjAQ8cesEa2xsdEpNDnWzshkavcFeTYsW1eTQ6XROrMlB07Rer3dlTQ6OxbNAq3WJQ8THZB7N1rT1uVgAcNElEmyQVPyvsOBAmkYIBQgF/woJjJOI27tToEtw60NEJ3rGV764V/iN6hofqGEFXKhL7MEwAqFuwq7ygwLcRBdKMABcrwP8on/d0Ph1g4pCxF+8Pcd5Nr1cAYA7c/cE21Fdu7myBi9n1CvfCuoxz9d1jzIoMxo/UigrjKZ4qXi2j7cQihCDFnLrBGMQ2lNbZ7vmvRqFyxKsxGCMv1aMlzPqlScbGj8LD4EMAy3i1udgKrOl2vSnZ5fcMRjN/D+tAttdo7B9+Z9G9W8anWs2DToNt04wL4rs9eeBSAMkYspVx2l3jE2fw1LK9gwXAJpw6wRDCG0L7mFdDhYK0wJ7OAh2rmhx00GGMWIYWARaxq3PwRBCwz2kl/r1zlOrSUSM8pD6CCiXbXqJv+9Jlfry/XH3L/n79oMEAy3k7gmGEOomoJ72Zn+WrNN5U1ROr57fNKrvGY3xEskgKYyuAi3WARKsHdEkMclL1t69AB2Yu5+DAdCh8Z5gjY2NBQUFtmvMZnNBQUF2dvbdu3f53joA7YvfBCssLFy/fn1aWpp1DcMwGzZsyMvL02g0KSkpRUVFvHYAgPbF7znYmTNn1q5du2jRIuuaoqIitVq9ZcsWhFBoaOjRo0fj4uJ47QMA7YjfBHvhhRd0uj+Nfrh+/XpUVBRejoqK2rZtm/UtlUr1ySef4OVHHnkkMTFRKpVyrMkhFAodh+GSGBKJhLUGAXmf4zBck4NLCQ1c4cPDg32YMkEQNE1zqd7BsUGSJDlGAp64+iqiWq2Wyf64LieTybRarcFgwHVjdDpdTk4Ofsvb2zsxMZE1bdD9LzprHuIwoVDIJZIgCC7fcoSQQCCgKJZbc8R9XBrkWB6HJEnWYjvofr0djpsGfHBygn3zzTfHjx9HCM2aNSshIaF5gIeHh1KpxMt6vV4gEFizqFu3bpmZmbbBSqXSKUVvEEICgUAulzc0NJhMTQdANdGiojdqtdqJRW/8/Py0Wq0ri974+z+4tBZwFicn2KhRo4YMGYIQsndYEhgYeOnSJbxcVlYWEBAAv6+gE3PyVUSxWOzj4+Pj40PTtMViqaqqqq6uRghZFwYPHlxcXHz+/Hm1Wp2RkZGUlOTcDriewcJ8Vqd8o7LmC2UDl5H+dSbzrxpdebORxKBT4vEcTKVSvfvuuwih6Ojod999l6bplJQUmqbXrFlz4MABpVIZHx8/efJk/jrgAjqLZeKt0kLtHxdy9nsoj4SHCOzvkz+srVtzrwovz/OVvxnUA3bfnRvBetLfjhQKhXPPwerr6517DvZe8e3lpWW26/eFBk3x/lMlXes52BWdfsSN27ZvvR8cMMPH2/rSz89Po9HAOVhnAkOl2qR5jfur9q95nNE0zZyf1Brn9wm4E0iwNokUNb1W3rvZGit5s7k2PhzK0IMODRKsTWb7+7T8JTEAAApNSURBVNnOwoyXSiZ52X3SwmgPj3D6T3f2ZsjbYRoOcCX4BW0TCUmcjOz5aZ3ypt4QJRZN9/ZyUHnKiyI/Dw/dWllzQacLFQpf6e4XDTM4OztIsLYSE8R8zoWuwmnhntBAXvsD3AocIgLAI0gwAHgECQYAjyDBAOARJBgAPIIEA4BHkGAA8AgSDAAeQYIBwCO3nq6i1+s5Fr3hUsqGpmmDwcAlkiAIs9nsOIwgCJFIZDQauURSFMU6TQYhJBaLTSYTl0ihUGg0GlnDRCKRxWJxECkWQz1wfrn1UCmdTseaD6zfIYyiKJqm9Xo969dXKBSSJMlaaQMnmMFgYJ2KhjfNOssLIYQztkkdrgdumiRJLg0KhUKTyeQgEhKMb26dYGazmTXBLBaLxWLhshvBDbJG4jJMrGG49hOXTSOEGIbhEsaxQYIguDfIPRLwAc7BAOARJBgAPIIEA4BHbn0OBpzout5wU2+IFNF97Bc1AE4HCdYlvHqval9tHV6e7yt/M8h1j7ru4uAQsfP7vlFtzS6E0MeK+pMNdgu5AeeCBOv8fmtWLu43LcutNuAskGCdX7dmz3/p3qyAHOAJJFjnN0XuFSr838l2qFDwF28oF+cicJGj8/OjqK96hb1bVXtNb+gjold08+sGezBXgQTrEsKEwneCA9q7F10RHCICwCNIMAB4BAkGAI8gwQDgESQYADyCBAOAR25ak+PmzZsnTpxYuHChVCp1SoNVVVWHDx+ePn16QIBzrlZrtdp9+/Y9+eSTffr0cUqDCKFdu3YNHTp00KBBzmrw4MGDwcHBo0ePdlaDoKXcdA9WUlKSnp6u0TjtCas1NTXp6enV1dXOalCn06Wnp9+6dctZDSKEDh48+N///teJDWZmZp4+fdqJDYKWctMEA6BzgAQDgEdueg6m1WoVCkVgYCAu3tR2BoOhurq6W7duNO2c+bwWi+XevXs+Pj7OOktECJWXl3t6enp62n3Kc0tVVVXRNC2Xc30AJ3A6N00wADoHOEQEgEdummA6nc62tq7FYikrK1Mqla1oymKxVFRUNPlsWxrE9Hr9nTt3WKvwsqqpqamqqmpyHFFVVVVZWdnqNhmGaWhosF3T0NBw9+5d1iquwOnccbqKVqtdunRpYmLiggULEELl5eWvvfZaQEBAZWVlYmLinDlzuDd169attLS0wMDAqqqqyMjIl19+mSCItjSI/fLLL3v37g0PDy8pKXn++eeHDh3a0hYQQhqNZvPmzSaTiaIojUazadMmLy8vg8GwadMmrVZLkqRIJNq4caNQKGxpy1lZWR988EFGRgaujL1///6ffvopMDCwsrLyH//4h7PuBAJOGPezc+fONWvWfPjhh/jl1q1bMzMzGYbRarULFy68d+8e96Y2bdr03XffMQxjMpkWLlx45cqVNjbIMIzZbJ4zZ87NmzcZhrl9+/Zzzz1nsVha1AL25Zdfbt++HS+//fbbn3/+OcMwX3/99ebNm/HKLVu24M63SHl5+cqVK2fOnKnVanEP58+fj5ePHz9u3SJwDbc7RDx79mxDQ8Pw4cOta4qKihISEhBCYrF4wIABZ8+e5d7a+vXrx40bh+5XnBcIBG1sECFUWloqEol69eqFEOrZsydJknfu3GlRC1hycvKKFSvwslAobNI3hFBCQkJL+8YwzHvvvbd48WLr1deioqIBAwbgXVlCQsJvv/3Wiq6CVnOvBFOr1enp6X/729+sa4xGY2Njo/VCs1wur6urs/NpR7766qvg4ODIyMi2N6hQKGwvfLe6S1ZXrly5cOHCY4891qRxHx8fhULRoqa+/PLL2NjY3r17W9fU1dXZ/rEqlQqeBeFK7X8OtnfvXovFIpPJZs2atWfPnhkzZth+fQUCAUmSzP1rABaLBf/Sc2wQIcQwzMGDB69evbp27drWNdiESCRibK5JMAzTlpt1v/zyy7///e+NGzfi2180Tdv2rUUtl5aW/vzzz2lpabYraZq2Xolh4JaMy7V/gkVFRTEMIxKJbt26hQfOnT59uqysTKfT+fv7T5482dfXt6amJigoCCFUW1sbHR3NsUGEEMMwO3fupCgqJSWFoiiEEEEQLW2wCT8/v9raWuvLmpoaPz+/Fv7Rf8jJyfn222+3bNni7e1tbbympgYv19bW+vv7c2/twIEDJEnu2LEDIaTT6Xbu3Dlv3jw/P7+ioiJrV318fKhmVdwAf9o/waynW3q9/s0338TLubm5CoUCn408+uij//nPf2bPnq1UKn///ff58+dzbBAhlJmZqdfrV61aZRvQ0gabCAgIkMlk58+f79+/f1FRkUwmw7naUjdu3Pjiiy+2bdsmkUisKxMSEo4fP56UlEQQxKlTpyZOnMi9weeee876rL1ff/01OTnZ29t78ODBBw4cqK+vl8vl33///bBhw1rRVdBqbjqSIysrq7KyEl+mr6+v37x5s9FoVKlU06dPHz9+PPd2FixYYDKZrMOjZs6cOW7cuLY0iF2+fHn79u0ymayxsfGVV17p169fS1tACG3fvv306dMymQy/HDhw4JIlSywWy3vvvXfp0iWCIGJiYpYuXYofHdhSs2bN+vDDD/G1jaysrKNHj3p5eQmFwvXr11v3lsAF3DTBmmtoaJBIJK24KcRTgwzDNDQ0eHl5tS4BHNNoNARB2O7Z2gg/mdaJoxwBRx0mwQDoiNzrMj0AnQwkGAA8ggQDgEeQYADwCBIMAB61/41mN2cymY4cOWJ96eHh8dBDD/Xt27dJWFFRUX5+vlKpDAwMTEpKCg4ObhKQm5trsVigglqX0w4j+DsUlUqFEIqOjh41atSoUaMGDBhA0/SECRM0Go01YOrUqQKBYPTo0TNnzhw0aBBFUWvXrrXOYVEqlfPmzSNJ8rHHHmu/vwO0D0gwFjjB8GQtrLi42N/fPyUlBb+cMWNGQEDAhQsXrAGZmZkCgWDfvn34ZUJCwooVKxYvXgwJ1gXBIWKLRUREjB07Fo9Lvnr16uHDhz/66KPY2FhrwOTJk7/55pu4uDj8cteuXf3797dO/QJdCiRYa5SUlMTExCCEfvzxR4TQ9OnTmwSMHTvWuty/f39X9g24FUgwTi5cuIBnqTU2NmZmZhYWFu7ZswchVF1d7evrax2wC0ATkGCc7N+/PzMzEyEklUr79et39uxZfEwol8uVSqXBYHBWPVPQyUCCcfLWW29Nmzat+fq4uDiz2VxQUDBq1Cjb9Xfu3OnRowdkHYAbzW0ybNiwvn37rl692raKY11d3eOPP75x48Z27BhwE7AHaxOSJA8cOPDEE08MGzZs6dKlISEh169f37Ztm6+v76uvvooQUqvVx48fRwhdu3atsrLys88+Qwg9+eSTUC++i4D5YCy0Wu348eNTU1ObHATaKi0t3blz5w8//FBXVxccHJycnLx48WI8XbKiomLmzJlN4vft22db+Al0YpBgAPAIzsEA4BEkGAA8ggQDgEeQYADwCBIMAB5BggHAI0gwAHgECQYAjyDBAOARJBgAPPr/H7xYhGt2N4wAAAAASUVORK5CYII=" /><!-- --></p>
 <p>As expected, the control and treatment group separate nicely, but
-there is also a substantial component of variation (PC1) which both
-groups have. This arises from the dependence between genes, which is the
-same in both groups in our simulation.</p>
+there is also a substantial component of variation which both groups
+have. This arises from the dependence between genes, which is the same
+in both groups in our simulation.</p>
+</div>
+<div id="accounting-for-known-covariates" class="section level2">
+<h2>Accounting for known covariates</h2>
+<p>So far, we have assumed that all of the original samples are
+identically distributed. Often, there is known structure in the samples,
+such as treatment groups, batches, or covariates like age. Without
+accounting for it, that structure will look like dependence between
+genes: all genes affected by the group will appear correlated. Instead,
+we can give <code>fit_marginals()</code> a design matrix so that each
+gene’s distribution depends on the covariates, and the dependence is
+estimated from what remains.</p>
+<p>The sample names in our data indicate that the mice come from two
+cohorts:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>samples <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">sample =</span> <span class="fu">colnames</span>(read_counts)[<span class="sc">-</span><span class="dv">1</span>]) <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">cohort =</span> <span class="fu">factor</span>(<span class="fu">str_extract</span>(sample, <span class="st">&quot;^[^_]+&quot;</span>)))</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="fu">table</span>(samples<span class="sc">$</span>cohort)</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; Arpp19  Dach1 </span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt;      8      4</span></span></code></pre></div>
+<p>We construct a design matrix with <code>model.matrix()</code>, with
+rows in the same order as the samples (columns) in the data.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>design <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> cohort, samples)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>marginals_cohort <span class="ot">&lt;-</span> <span class="fu">fit_marginals</span>(read_counts, <span class="at">method=</span><span class="st">&quot;DESeq2&quot;</span>, <span class="at">design=</span>design)</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>dep_cohort <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals_cohort, <span class="at">method=</span><span class="st">&quot;pca&quot;</span>, <span class="at">rank=</span><span class="dv">2</span>)</span></code></pre></div>
+<p>Since a design was given, <code>simulate_data()</code> now requires a
+<code>new_design</code> with the same columns, which specifies the
+covariates of each simulated sample. For example, to simulate 6 mice
+from each cohort:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>new_samples <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">cohort =</span> <span class="fu">factor</span>(<span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;Arpp19&quot;</span>, <span class="st">&quot;Dach1&quot;</span>), <span class="at">each=</span><span class="dv">6</span>), <span class="at">levels=</span><span class="fu">levels</span>(samples<span class="sc">$</span>cohort)))</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>new_design <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> cohort, new_samples)</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>sim_cohort <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals_cohort, dep_cohort, <span class="at">new_design=</span>new_design)</span></code></pre></div>
+<p>Or to simulate only mice like the first (reference) cohort, use a
+<code>new_design</code> where every other column is zero. Note that this
+is not the same as an all-ones intercept column if the design had no
+intercept.</p>
+<p>Be careful with simulating from the fit coefficients of real groups,
+as we did above. The estimated difference between groups includes
+estimation noise, so every gene will have some estimated effect even if,
+in truth, most genes are not different. Simulating from these estimates
+therefore gives more differential expression than really exists in the
+original data. To simulate differential expression with a known truth,
+choose the effects explicitly instead, as in the previous section, and
+use <code>add_effect()</code> with <code>overwrite = TRUE</code> to
+replace an estimated coefficient:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>marginals_cohort_de <span class="ot">&lt;-</span> <span class="fu">add_effect</span>(marginals_cohort, <span class="st">&quot;cohortDach1&quot;</span>, de_lfc, <span class="at">overwrite=</span><span class="cn">TRUE</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>sim_cohort_de <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals_cohort_de, dep_cohort, <span class="at">new_design=</span>new_design)</span></code></pre></div>
+<div id="constructing-a-matching-new_design" class="section level3">
+<h3>Constructing a matching new_design</h3>
+<p><code>simulate_data()</code> checks that <code>new_design</code> has
+the same column names as the coefficients, and that factor contrasts
+match, but it cannot check everything. Some terms are encoded in a way
+that depends on the data itself, so building <code>new_design</code>
+from a formula separately would silently encode them differently. The
+most common case is splines, whose knots are chosen from the data, and
+similarly <code>poly()</code> and <code>scale()</code>.</p>
+<p>For example, suppose our samples had an age covariate that we model
+with a spline. (These ages are made up for illustration.)</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>samples<span class="sc">$</span>age <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="fu">nrow</span>(samples), <span class="dv">10</span>, <span class="dv">30</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">model.frame</span>(<span class="sc">~</span> cohort <span class="sc">+</span> splines<span class="sc">::</span><span class="fu">ns</span>(age, <span class="at">df=</span><span class="dv">3</span>), samples)</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>design_age <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(model, samples)</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>marginals_age <span class="ot">&lt;-</span> <span class="fu">fit_marginals</span>(read_counts, <span class="at">method=</span><span class="st">&quot;DESeq2&quot;</span>, <span class="at">design=</span>design_age)</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>dep_age <span class="ot">&lt;-</span> <span class="fu">fit_dependence</span>(marginals_age, <span class="at">method=</span><span class="st">&quot;pca&quot;</span>, <span class="at">rank=</span><span class="dv">2</span>)</span></code></pre></div>
+<p>To build the <code>new_design</code>, use the terms of the original
+model frame, which remember the knots:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>new_samples <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>  <span class="at">cohort =</span> <span class="fu">factor</span>(<span class="st">&quot;Arpp19&quot;</span>, <span class="at">levels=</span><span class="fu">levels</span>(samples<span class="sc">$</span>cohort)),</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>  <span class="at">age =</span> <span class="fu">c</span>(<span class="dv">12</span>, <span class="dv">16</span>, <span class="dv">20</span>, <span class="dv">24</span>, <span class="dv">28</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>)</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>new_design_age <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="fu">delete.response</span>(<span class="fu">terms</span>(model)), new_samples)</span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>sim_age <span class="ot">&lt;-</span> <span class="fu">simulate_data</span>(marginals_age, dep_age, <span class="at">new_design=</span>new_design_age)</span></code></pre></div>
+<p>Do not instead use
+<code>model.matrix(~ cohort + splines::ns(age, df=3), new_samples)</code>:
+that would place the knots based on the new ages and give a matrix with
+the same column names but a different meaning.</p>
+</div>
 </div>
 
 
